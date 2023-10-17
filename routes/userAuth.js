@@ -9,7 +9,6 @@ const router = express.Router()
 require('dotenv').config()
 const userModel = require('../schema/user')
 const e = require('express')
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const transporter = nodemailer.createTransport(
     smtpTransporter({
       service: 'Gmail',
@@ -20,6 +19,7 @@ const transporter = nodemailer.createTransport(
     })
   )
   const otpmap = new Map()
+/*otp request route here*/
 router.post("/getotp",async(req,res)=>{
     const {email} = req.body;
     const otpvalue = otp.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
@@ -115,7 +115,7 @@ router.post("/getotp",async(req,res)=>{
      otpmap.delete(email)
    },1000)
 })
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*otp verify route here*/
 router.post("/otpverify",async(req,res)=>{
     console.log(otpmap)
     const {email,code} = req.body;
@@ -140,7 +140,7 @@ router.post("/otpverify",async(req,res)=>{
        res.send({message:"internal server error"})
     }
 })
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*register route here*/
 router.post("/register",async(req,res)=>{
    const joischema = joi.object(
     {
@@ -178,7 +178,7 @@ router.post("/register",async(req,res)=>{
       return res.status(500).send({ message: "Error while registering user" });
     }
 })
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*login route here*/
 router.post("/login",async(req,res)=>{
     const {email,password} = req.body;
     const user = await userModel.findOne({email:email})
@@ -201,7 +201,7 @@ router.post("/login",async(req,res)=>{
         }
     })
 })
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*changepassword route here*/
 router.post("/changepassword",async(req,res)=>{
       const {email,newpass} = req.body
       const hashpassnew = await bcrypt.hash(newpass,10)
@@ -216,7 +216,7 @@ router.post("/changepassword",async(req,res)=>{
       }
       res.send({message:"password updated"})
 });
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*token refresh route here*/
 router.post("/token",(req,res)=>{
     const oldaccessToken = req.headers.authorization.split(" ")[1];
     jwt.verify(oldaccessToken,process.env.ACCESS_TOKEN_SECRETKEY,(err,user)=>{
