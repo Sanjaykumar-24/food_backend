@@ -25,15 +25,19 @@ const transporter = nodemailer.createTransport(
 );
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-router.post('/adminregister', async (req, res) => {
+router.post('/register', async (req, res) => {
   const schema = Joi.object({
     password: Joi.string().min(6).required(),
     email: Joi.string().email().required(),
+    verifyotp:Joi.string().required()
   });
 
   const { error, value } = schema.validate(req.body);
   const alreadyAdmin = await adminModel.findOne({ email: value.email });
-
+  if(value.verifyotp!=verificationCodes?.get(value.email)?.code)
+    {
+        res.send({message:"not verified"})
+    }
   if (alreadyAdmin) {
     return res.json({ message: "User is already registered" });
   }
@@ -55,68 +59,141 @@ router.post('/adminregister', async (req, res) => {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-router.post('/forgot', async(req, res) => {
+router.post("/getotp",async(req,res)=>{
   const {email} = req.body;
-  const ifuser=await adminModel.findOne({email})
-  if(ifuser)
-  {
-    const num= OTP();
-    console.log(num);
-    const generatedCode = num ;
-    const expirationTime = 10 * 60 * 1000;
-
- 
-    verificationCodes.set(email, {
-        code: generatedCode,
-        expires: Date.now() + expirationTime,
-    });
-
+  const otpvalue =otp_generator.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
+  console.log(otpvalue)
+  const exptime = 10*60*1000
+  verificationCodes.set(email,{code:otpvalue,exptime:exptime+Date.now()})
   const mailOptions = {
-    to: email,
-    subject: 'Password Reset Verification Code',
-    text: `Your verification code is: ${generatedCode}`,
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      res.send('Error sending email');
-    } else {
-      console.log('Email sent: ' + info.response);
-      res.send('Check your email for the verification code.');
-    }
-  });
-
-  setTimeout(() => {
-    verificationCodes.delete(email);
-  }, expirationTime);
-}
-else{
-    res.send("email is not registered");
-}
-});
+      to: email,
+      subject: 'Password Reset Verification Code',
+      html: ` <html>
+           <head>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  background-color: #f4f4f4;
+                  margin: 0;
+                  padding: 0;
+              }
+              .container {
+                  max-width: 600px;
+                  margin: 0 auto;
+                  padding: 20px;
+                  background-color: #fff;
+                  border-radius: 5px;
+                  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              }
+      
+              .header {
+                  background-color: #007BFF;
+                  color: #fff;
+                  text-align: center;
+                  padding: 20px;
+              }
+      
+              .header h1 {
+                  font-size: 24px;
+              }
+      
+              .content {
+                  padding: 20px;
+              }
+      
+              .content p {
+                  font-size: 16px;
+              }
+      
+              .otp-code {
+                  font-size: 28px;
+                  text-align: center;
+                  padding: 10px;
+                  background-color: #007BFF;
+                  color: #fff;
+                  border-radius: 5px;
+              }
+      
+              .footer {
+                  text-align: center;
+                  margin-top: 20px;
+              }
+      
+              .footer p {
+                  font-size: 14px;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>OTP Verification</h1>
+              </div>
+              <div class="content">
+                  <p>Dear User,</p>
+                  <p>Your OTP code for verification is:</p>
+                  <div class="otp-code">${otpvalue}</div>
+              </div>
+              <div class="footer">
+                  <p>This is an automated message, please do not reply.</p>
+              </div>
+          </div>
+      </body>
+      </html>
+      `}
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log(error);
+        res.send('Error in sending email');
+      } else {
+        console.log('Email sent: ' + info.response);
+        res.send('Check your email for the verification code');
+      }
+    })
+ setTimeout(()=>{
+   verificationCodes.delete(email)
+ },10*60*1000)
+})
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const verifyCodeMiddleware = (req, res, next) => {
-  const email = req.body.email;
-  const code = req.body.code;
-  const storedCode = verificationCodes.get(email);
+router.post("/otpverify",async(req,res)=>
+{
+    const {email,code} = req.body;
+    console.log(verificationCodes.get(email))
+    const otp = verificationCodes.get(email);
+    console.log(otp)
+    try{
+    if(!otp)
+    {
+        res.send({message:"otp expired"})
+    }
+    else if(otp.code == code && otp.exptime > Date.now())
+    {
+      res.send({message:"otp verified",verifyotp:otp.code}) 
+    }
+    else if(otp.code != code)
+    {
+        res.send({message:"invalid otp"})
+    }
+    }
+    catch(error)
+    {
+       console.log(error.message)
+       res.send({message:"internal server error"})
+    }
+})
 
-  if (!storedCode || storedCode.code !== code || Date.now() > storedCode.expires) {
-    res.send('Invalid or expired code.');
-  } else {
-    verificationCodes.delete(email);
-    next(); 
+router.post('/changepassword', async (req, res) => {
+  const { email, password,hashotp } = req.body;
+  const verify =  bcrypt.compare(verificationCodes.get(email).code,hashotp)
+  if(!verify)
+  {
+    res.send("otp not verified")
   }
-};
-
-
-router.post('/change-password', verifyCodeMiddleware, async (req, res) => {
-  const { email, password } = req.body;
   const db_user = await adminModel.findOne({ email });
   if (!db_user) {
     return res.status(404).send({ message: "User not found" });
   }
-  const comp = await bcrypt.compare(password, db_user.password);
+  const comp =  bcrypt.compare(password, db_user.password);
   if (comp) {
     return res.send({ message: "Don't use old password" });
   }
