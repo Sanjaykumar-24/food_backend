@@ -11,13 +11,19 @@ app.use(express.urlencoded({extended:false}))
 app.use(cors())
 
 
-mongoose.connect(process.env.URI)
-.then(()=>{
-    console.log("database is connected successfully 😀😃😄");
+mongoose.connect(process.env.URI,{
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
 })
-.catch(err=>{
-    console.log("database is not connected 😔😔☹");
-})
+    .then(() => {
+      console.log('Database connected successfully 😀😃😄');
+    })
+    .catch((err) => {
+      console.error('Database connection error 😔😔☹', err);
+    });
+
+
 app.use('/',authRouter)
 app.listen(port,()=>{
     console.log(` port http://localhost:${port} is running `);

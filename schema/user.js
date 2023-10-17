@@ -13,6 +13,10 @@ const userSchema = new mongoose.Schema({
     rollno:{
         type:String,
         unique:true
+    },
+    amount:{
+        type:Number,
+        default:0
     }
 })
 const userModel = mongoose.model('users',userSchema)
