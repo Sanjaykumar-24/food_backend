@@ -116,7 +116,7 @@ router.post("/getotp",async(req,res)=>{
    },1000)
 })
 /*otp verify route here*/
-router.post("/otpverify",async(req,res)=>{
+const verifyMiddle = ((req,res,next)=>{
     console.log(otpmap)
     const {email,code} = req.body;
     const otp = otpmap.get(email);
@@ -127,7 +127,8 @@ router.post("/otpverify",async(req,res)=>{
     }
     else if(otp.code == code && otp.exptime > Date.now())
     {
-        res.status(200).send({message:"otp verified"});
+        otpmap.delete(email);
+        next();
     }
     else if(otp.code != code)
     {
@@ -140,8 +141,9 @@ router.post("/otpverify",async(req,res)=>{
        res.send({message:"internal server error"})
     }
 })
+
 /*register route here*/
-router.post("/register",async(req,res)=>{
+router.post("/userregister",async(req,res)=>{
    const joischema = joi.object(
     {
         password:joi.string().min(6).required(),
@@ -179,7 +181,7 @@ router.post("/register",async(req,res)=>{
     }
 })
 /*login route here*/
-router.post("/login",async(req,res)=>{
+router.post("/adminlogin",async(req,res)=>{
     const {email,password} = req.body;
     const user = await userModel.findOne({email:email})
     if(!user)
@@ -202,7 +204,7 @@ router.post("/login",async(req,res)=>{
     })
 })
 /*changepassword route here*/
-router.post("/changepassword",async(req,res)=>{
+router.post("/changepassword",verifyMiddle,async(req,res)=>{
       const {email,newpass} = req.body
       const hashpassnew = await bcrypt.hash(newpass,10)
       if(!hashpassnew)
@@ -225,7 +227,6 @@ router.post("/token",(req,res)=>{
         console.log(err.message)
         return res.send({message:"access token is not valid"})
        }
-
        const accessToken = jwt.sign({id:user?.id},process.env.ACCESS_TOKEN_SECRETKEY,{expiresIn:'15m'})
        const refreshToken = jwt.sign({id:user?.id},process.env.REFRESH_TOKEN_SECRETKEY,{expiresIn:'15d'})
        res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
