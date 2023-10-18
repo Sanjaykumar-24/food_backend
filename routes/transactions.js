@@ -1,7 +1,7 @@
 const express=require('express')
 const router=express.Router();
-const AdminverifyMiddleware=require('./verifyMiddleware')
-const UserverifyMiddleware=require('./verifyMiddleware');
+const {AdminverifyMiddleware}=require('./verifyMiddleware')
+const {UserverifyMiddleware}=require('./verifyMiddleware');
 const userModel = require('../schema/user');
 
 
