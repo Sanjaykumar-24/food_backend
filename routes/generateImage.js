@@ -91,7 +91,9 @@ router.post("/upload_image", async (req, res) => {
       .toBuffer();
 
     fs.writeFile("./temp/foodimages.jpg", imageBuffer, (err) => {
-      console.log("ERROR in CONVERSION", err);
+      if(err){
+        console.log("Err while converting buffer")
+      }
     });
 
     const authClient = await authorize();
