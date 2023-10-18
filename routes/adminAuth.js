@@ -183,7 +183,7 @@ router.post('/register', async (req, res) => {
        return res.send({message:"not verified"})
     }
   if (alreadyAdmin) {
-    return res.json({ message: "User is already registered" });
+    return res.json({ message: "Admin is already registered" });
   }
     const { email, password } = value;
     const hashedPassword = await bcrypt.hash(password,10);

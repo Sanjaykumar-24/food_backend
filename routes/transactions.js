@@ -14,7 +14,8 @@ router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    user.amount += rechargeamount;
+    const numericRechargeAmount = Number(rechargeamount);
+    user.amount += numericRechargeAmount;
     await user.save();
 
     return res.status(200).json({ message: 'Recharge successful', user });
