@@ -177,13 +177,13 @@ router.post("/register",async(req,res)=>{
     return res.send({message:"invalid data"})
    }
    const alreadyUser = await userModel.findOne({ email: value.email });
-    if(value.verifyotp!=otpmap?.get(value.email)?.code)
-    {
-        return  res.send({message:"not verified"})
-    }
     if (alreadyUser) {
     return res.json({ message: "User is already registered" });
-  }
+      }
+      if(value.verifyotp!=otpmap?.get(value.email)?.code)
+      {
+          return  res.send({message:"not verified"})
+      }
     try {
         const hashedpassword = await bcrypt.hash(value.password,10);
         if(!hashedpassword)

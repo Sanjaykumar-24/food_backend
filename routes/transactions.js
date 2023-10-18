@@ -1,7 +1,6 @@
-const express=require('express')
+const express = require('express')
 const router=express.Router();
-const {AdminverifyMiddleware}=require('./verifyMiddleware')
-const {UserverifyMiddleware}=require('./verifyMiddleware');
+const {AdminverifyMiddleware} = require('./verifyMiddleware')
 const userModel = require('../schema/user');
 router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
   const { rollno, rechargeamount } = req.body;
@@ -22,6 +21,5 @@ router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 });
-
 
 module.exports = router
