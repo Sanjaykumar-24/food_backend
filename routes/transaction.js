@@ -4,7 +4,6 @@ const {AdminverifyMiddleware} = require('./verifyMiddleware')
 const userModel = require('../schema/user');
 router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
   const { rollno, rechargeamount } = req.body;
-
   try {
     const user = await userModel.findOne({ rollno });
 

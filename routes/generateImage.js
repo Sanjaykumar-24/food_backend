@@ -1,18 +1,13 @@
 const express = require("express");
-const app = express();
-const fileUpload = require("express-fileupload");
 const sharp = require("sharp");
 const fs = require("fs");
 const { google } = require("googleapis");
 const apikeys = require("./apikeys.json");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
+const router = express.Router()
 
-app.use((req, res, next) => {
-  console.log(req.method);
-  next();
-});
 
-app.use(fileUpload());
+
 const item_details = {};
 async function authorize() {
   const jwtClient = new google.auth.JWT(
@@ -21,10 +16,10 @@ async function authorize() {
     apikeys.private_key,
     SCOPE
   );
-
   await jwtClient.authorize();
   return jwtClient;
 }
+
 
 async function uploadFile(authClient) {
   return new Promise(async (resolve, rejected) => {
@@ -59,6 +54,7 @@ async function uploadFile(authClient) {
         },
       });
 
+      
       // Get the sharing link to the image
       const result = await drive.files.get({
         fileId: file.data.id,
@@ -75,7 +71,8 @@ async function uploadFile(authClient) {
   });
 }
 
-app.post("/upload_image", async (req, res) => {
+
+router.post("/upload_image", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
@@ -83,6 +80,7 @@ app.post("/upload_image", async (req, res) => {
   if (!catagory || !item) {
     return res.status(400).send("Insufficient data");
   }
+
   item_details.catagory = catagory;
   item_details.item = item;
   const uploadedImage = req.files.image;
@@ -106,6 +104,5 @@ app.post("/upload_image", async (req, res) => {
   }
 });
 
-app.listen(505, () => {
-  console.log("Server Running");
-});
+
+module.exports = router
