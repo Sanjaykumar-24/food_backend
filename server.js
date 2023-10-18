@@ -5,7 +5,7 @@ const mongoose=require('mongoose');
 const userRouter = require('./routes/userAuth')
 const adminRouter = require('./routes/adminAuth')
 const updateRouter = require('./routes/userUpdation')
-const trachsactionrouter = require('./routes/transactions')
+const trachsactionrouter = require('./routes/transaction')
 require('dotenv').config()
 const port = process.env.PORT||2001;
 const app = express();
