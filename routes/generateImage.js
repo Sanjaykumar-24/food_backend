@@ -6,9 +6,8 @@ const apikeys = require("../apikeys.json");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
 const router = express.Router()
 
-
-
 const item_details = {};
+
 async function authorize() {
   const jwtClient = new google.auth.JWT(
     apikeys.client_email,
@@ -63,16 +62,16 @@ async function uploadFile(authClient) {
 
       const imageUrl = result.data.webViewLink;
       console.log("Image URL:", imageUrl);
-
       resolve(file);
+
     } catch (error) {
       rejected(error);
     }
   });
 }
 
-
 router.post("/upload_image", async (req, res) => {
+
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
@@ -99,12 +98,10 @@ router.post("/upload_image", async (req, res) => {
     const authClient = await authorize();
     await uploadFile(authClient);
     console.log("PIC URL=",item_details.url)
-    console.log("Image cat",item_details.catagory,item_details.item)
     return res.status(200).send("Image upload Success");
   } catch (err) {
     console.log(err);
   }
 });
-
 
 module.exports = router
