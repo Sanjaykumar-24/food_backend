@@ -121,9 +121,10 @@ router.post("/getotp",async(req,res)=>{
           return res.send('Check your email for the verification code');
         }
       })
-   setTimeout(()=>{
+   const timeId = setTimeout(()=>{
      otpmap.delete(email)
-   },10*60*1000)
+   },exptime)
+   clearTimeout(timeId)
 })
 
 
@@ -267,6 +268,5 @@ router.post("/token",(req,res)=>{
        return res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
     })
 })
-
 
 module.exports = router;

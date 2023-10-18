@@ -126,9 +126,10 @@ router.post("/getotp",async(req,res)=>{
         return res.send('Check your email for the verification code');
       }
     })
- setTimeout(()=>{
+ const timeID =  setTimeout(()=>{
    verificationCodes.delete(email)
- },10*60*1000)
+ },exptime)
+ clearTimeout(timeID)
 })
 
 /*otp verifying route here*/
