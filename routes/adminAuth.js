@@ -253,7 +253,7 @@ router.post('/login',async(req,res)=>{
   })
 })
 /*access token route here*/
-router.token('/token',async(req,res)=>{
+router.post('/token',async(req,res)=>{
   const oldrefreshToken = req.headers.authorization.split(" ")[1];
   jwt.verify(oldrefreshToken,process.env.REFRESH_TOKEN_SECRETKEY,(err,user)=>{
      if(err)
