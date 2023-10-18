@@ -4,6 +4,8 @@ const cors=require('cors')
 const mongoose=require('mongoose');
 const userRouter = require('./routes/userAuth')
 const adminRouter = require('./routes/adminAuth')
+
+const trachsactionrouter=require('./routes/transactions')
 require('dotenv').config()
 const port = process.env.PORT||2001;
 const app = express();
@@ -29,6 +31,7 @@ mongoose.connect(process.env.URI,{
 
 app.use('/user',userRouter)
 app.use('/admin',adminRouter)
+app.use('/',trachsactionrouter)
 
 app.listen(port,()=>{
     console.log(` port http://localhost:${port} is running `);
