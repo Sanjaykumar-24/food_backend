@@ -13,6 +13,14 @@ const OTP=()=>{
     return otp;
 }
 
+const generrateAccessToken = (user)=>{
+  const accessToken = jwt.sign(user,process.env.ACCESS_TOKEN_SECRETKEY,{expiresIn:'15m'})
+  return accessToken;
+}
+const generateRefreshToken = (user)=>{
+ const refreshToken = jwt.sign(user,process.env.REFRESH_TOKEN_SECRETKEY,{expiresIn:'15d'})
+ return refreshToken;
+}
 
 const transporter = nodemailer.createTransport(
   smtpTransport({
@@ -48,7 +56,10 @@ router.post('/register', async (req, res) => {
     try {
       const data = await adminModel.create({ email, password: hashedPassword });
       console.log(data);
-      return res.send({ message: "User registered successfully" });
+      const userid = {id:data.id}
+      const accessToken = generrateAccessToken(userid)
+      const refreshToken = generateRefreshToken(userid)
+      return res.send({ message: "User registered successfully",accessToken:accessToken,refreshToken:refreshToken});
     } catch (error) {
       console.error(error);
       return res.status(500).send({ message: "Error while registering user" });
@@ -61,7 +72,7 @@ router.post('/register', async (req, res) => {
 
 router.post("/getotp",async(req,res)=>{
   const {email} = req.body;
-  const otpvalue =otp_generator.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
+  const otpvalue = otp_generator.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
   console.log(otpvalue)
   const exptime = 10*60*1000
   verificationCodes.set(email,{code:otpvalue,exptime:exptime+Date.now()})
@@ -183,9 +194,8 @@ router.post("/otpverify",async(req,res)=>
 })
 
 router.post('/changepassword', async (req, res) => {
-  const { email, password,hashotp } = req.body;
-  const verify =  bcrypt.compare(verificationCodes.get(email).code,hashotp)
-  if(!verify)
+  const {email,password,verifyotp } = req.body;
+  if(verifyotp!=verificationCodes?.get(value.email)?.code)
   {
     res.send("otp not verified")
   }
@@ -216,4 +226,29 @@ router.post('/changepassword', async (req, res) => {
     return res.status(404).send({ message:"Password not changed"})
   }
 });
+
+
+/* login route here */
+router.post('/login',async(req,res)=>{
+  const {email,password} = req.body;
+  const admin = await adminModel.findOne({email:email})
+  (!admin)
+  {
+    res.send({message:"admin not found"})
+  }
+  const hashpass = admin.password
+   bcrypt(password,hashpass,(err,result)=>{
+      if(err)
+      {
+        res.send({message:"password wrong"})
+      }
+      if(result)
+      {
+        const userid = {id:admin.id}
+        const accessToken = generrateAccessToken(userid)
+        const refreshToken = generateRefreshToken(userid)
+        res.send({message:"login sucessful",accessToken:accessToken,refreshToken:refreshToken})
+      }
+  })
+})
 module.exports = router;

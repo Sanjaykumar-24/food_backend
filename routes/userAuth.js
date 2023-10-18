@@ -18,6 +18,14 @@ const transporter = nodemailer.createTransport(
       },
     })
   )
+  const generrateAccessToken = (user)=>{
+       const accessToken = jwt.sign(user,process.env.ACCESS_TOKEN_SECRETKEY,{expiresIn:'15m'})
+       return accessToken;
+  }
+  const generateRefreshToken = (user)=>{
+      const refreshToken = jwt.sign(user,process.env.REFRESH_TOKEN_SECRETKEY,{expiresIn:'15d'})
+      return refreshToken;
+  }
   const otpmap = new Map()
 /*otp request route here*/
 router.post("/getotp",async(req,res)=>{
@@ -150,8 +158,8 @@ router.post("/register",async(req,res)=>{
         value.password = hashedpassword
       const data = await userModel.create(value);
       const userid = {id:data.id};
-      const accessToken = jwt.sign(userid, process.env.ACCESS_TOKEN_SECRETKEY,{expiresIn:'15m'});
-      const refreshToken = jwt.sign(userid, process.env.REFRESH_TOKEN_SECRETKEY,{expiresIn:'15d'});      
+      const accessToken = generrateAccessToken(userid)
+      const refreshToken = generateRefreshToken(userid)
       return res.json({message:"user registered sucessfully",accessToken:accessToken,refreshToken:refreshToken})
     } catch (error) {
       console.error(error);
@@ -159,7 +167,7 @@ router.post("/register",async(req,res)=>{
     }
 })
 /*login route here*/
-router.post("/adminlogin",async(req,res)=>{
+router.post("/login",async(req,res)=>{
     const {email,password} = req.body;
     const user = await userModel.findOne({email:email})
     if(!user)
@@ -175,8 +183,8 @@ router.post("/adminlogin",async(req,res)=>{
         }
         if(result)
         {
-            const accessToken = jwt.sign(id,process.env.ACCESS_TOKEN_SECRETKEY,{expiresIn:'15m'});
-            const refreshToken = jwt.sign(id,process.env.REFRESH_TOKEN_SECRETKEY,{expiresIn:'15d'}); 
+            const accessToken = generrateAccessToken(id);
+            const refreshToken = generateRefreshToken(id);
             res.send({message:"password is correct",accessToken:accessToken,refreshToken:refreshToken})
         }
     })
@@ -232,15 +240,16 @@ router.post("/changepassword",async(req,res)=>{
 });
 /*token refresh route here*/
 router.post("/token",(req,res)=>{
-    const oldaccessToken = req.headers.authorization.split(" ")[1];
-    jwt.verify(oldaccessToken,process.env.REFRESH_TOKEN_SECRETKEY,(err,user)=>{
+    const oldrefreshToken = req.headers.authorization.split(" ")[1];
+    jwt.verify(oldrefreshToken,process.env.REFRESH_TOKEN_SECRETKEY,(err,user)=>{
        if(err)
        {
         console.log(err.message)
         return res.send({message:"access token is not valid"})
        }
-       const accessToken = jwt.sign({id:user?.id},process.env.ACCESS_TOKEN_SECRETKEY,{expiresIn:'15m'})
-       const refreshToken = jwt.sign({id:user?.id},process.env.REFRESH_TOKEN_SECRETKEY,{expiresIn:'15d'})
+       const userid = {id:user?.id}
+       const accessToken = generrateAccessToken(userid)
+       const refreshToken = generateRefreshToken(userid)
        res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
     })
 })
