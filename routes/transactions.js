@@ -1,9 +1,8 @@
 const express=require('express')
 const router=express.Router();
-const AdminverifyMiddleware=require('./verifyMiddleware')
-const UserverifyMiddleware=require('./verifyMiddleware');
+const {AdminverifyMiddleware} =require('./verifyMiddleware')
+const {UserverifyMiddleware} = require('./verifyMiddleware');
 const userModel = require('../schema/user');
-
 
 router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
   const { rollno, rechargeamount } = req.body;
@@ -25,4 +24,4 @@ router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
 });
 
 
-module.exports=router
+module.exports = router
