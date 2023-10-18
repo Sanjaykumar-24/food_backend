@@ -2,10 +2,6 @@ const express=require('express')
 const jwt=require('jsonwebtoken')
 const adminModel=require('../schema/admin')
 const userModel=require('../schema/user')
-
-
-
-
 const AdminverifyMiddleware=(async(req,res,next)=>{
     const  AccessToken=req.headers.authorization.split(' ')[1]
     jwt.verify(AccessToken,process.env.ACCESS_TOKEN_SECRETKEY,async (err,user)=>{
@@ -38,7 +34,8 @@ const UserverifyMiddleware=(async(req,res,next)=>{
         const isuser=await userModel.findById(user.id)
         console.log(user);
         if(!isuser)
-        return res.send({message:"not a admin"})     
+        return res.send({message:"not a admin"})
+        req.userId = user.id;
         next();
     })
 })
