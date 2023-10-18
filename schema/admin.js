@@ -8,7 +8,6 @@ const adminschema=new mongoose.Schema(
         password:{
             type:String,
         }
-
     }
 )
 const adminModel = mongoose.model('admins',adminschema);

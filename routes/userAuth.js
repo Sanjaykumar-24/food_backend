@@ -29,6 +29,7 @@ const transporter = nodemailer.createTransport(
   const otpmap = new Map()
 
 /*otp request route here*/
+
 router.post("/getotp",async(req,res)=>{
     const {email} = req.body;
     const otpvalue = otp.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
@@ -114,17 +115,49 @@ router.post("/getotp",async(req,res)=>{
       transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.log(error);
-          res.send('Error in sending email');
+         return res.send('Error in sending email');
         } else {
           console.log('Email sent: ' + info.response);
-          res.send('Check your email for the verification code');
+          return res.send('Check your email for the verification code');
         }
       })
    setTimeout(()=>{
      otpmap.delete(email)
    },10*60*1000)
 })
+
+
+/*otpverification route here */
+
+router.post("/otpverify",async(req,res)=>
+{
+    const {email,code} = req.body;
+    console.log(otpmap.get(email))
+    const otp = otpmap.get(email);
+    console.log(otp)
+    try{
+    if(!otp)
+    {
+        return  res.send({message:"otp expired"})
+    }
+    else if(otp.code == code && otp.exptime > Date.now())
+    {
+        return  res.send({message:"otp verified",verifyotp:otp.code})
+    }
+    else if(otp.code != code)
+    {
+        return  res.send({message:"invalid otp"})
+    }
+    }
+    catch(error)
+    {
+       console.log(error.message)
+       return  res.send({message:"internal server error"})
+    }
+})
+
 /*register route here*/
+
 router.post("/register",async(req,res)=>{
    const joischema = joi.object(
     {
@@ -140,12 +173,12 @@ router.post("/register",async(req,res)=>{
    if(error)
    {
     console.log(error.message)
-    res.send({message:"invalid data"})
+    return res.send({message:"invalid data"})
    }
    const alreadyUser = await userModel.findOne({ email: value.email });
     if(value.verifyotp!=otpmap?.get(value.email)?.code)
     {
-        res.send({message:"not verified"})
+        return  res.send({message:"not verified"})
     }
     if (alreadyUser) {
     return res.json({ message: "User is already registered" });
@@ -154,7 +187,7 @@ router.post("/register",async(req,res)=>{
         const hashedpassword = await bcrypt.hash(value.password,10);
         if(!hashedpassword)
         {
-         res.send({message:"password not hashed"})
+            return res.send({message:"password not hashed"})
         }
         value.password = hashedpassword
       const data = await userModel.create(value);
@@ -167,79 +200,59 @@ router.post("/register",async(req,res)=>{
       return res.status(500).send({ message: "Error while registering user" });
     }
 })
+
+
 /*login route here*/
+
+
 router.post("/login",async(req,res)=>{
     const {email,password} = req.body;
     const user = await userModel.findOne({email:email})
     if(!user)
     {
-        res.send({message:"user not found"})
+        return res.send({message:"user not found"})
     }
     const hashpass = user.password
     const id = {id:user.id};
     bcrypt.compare(password,hashpass,(err,result)=>{
         if(err)
         {
-            res.send({message:"error while comparing password"})
+            return res.send({message:"error while comparing password"})
         }
         if(result)
         {
             const accessToken = generrateAccessToken(id);
             const refreshToken = generateRefreshToken(id);
-            res.send({message:"password is correct",accessToken:accessToken,refreshToken:refreshToken})
+            return res.send({message:"password is correct",accessToken:accessToken,refreshToken:refreshToken})
         }
     })
 })
 
+/*chang password route here*/
 
-/*changepassword route here */
-router.post("/otpverify",async(req,res)=>
-{
-    const {email,code} = req.body;
-    console.log(otpmap.get(email))
-    const otp = otpmap.get(email);
-    console.log(otp)
-    try{
-    if(!otp)
-    {
-        res.send({message:"otp expired"})
-    }
-    else if(otp.code == code && otp.exptime > Date.now())
-    {
-        res.send({message:"otp verified",verifyotp:otp.code})
-    }
-    else if(otp.code != code)
-    {
-        res.send({message:"invalid otp"})
-    }
-    }
-    catch(error)
-    {
-       console.log(error.message)
-       res.send({message:"internal server error"})
-    }
-})
+
 router.post("/changepassword",async(req,res)=>{
-      const {email,newpass,hashotp} = req.body
-      const verify =  bcrypt.compare(otpmap.get(email).code,hashotp)
-      if(!verify)
+      const {email,newpass,verifyotp} = req.body
+      if(value.verifyotp!=otpmap?.get(value.email)?.code)
       {
-        res.send("otp not verified")
+        return res.send("otp not verified")
       }
       const hashpassnew = await bcrypt.hash(newpass,10)
       if(!hashpassnew)
       {
-        res.send({message:"password not hashed"})
+        return res.send({message:"password not hashed"})
       }
       const user = await userModel.updateOne({email:email},{$set:{password:hashpassnew}})
       if(!user)
       {
-        res.send({message:"password not updated"})
+        return res.send({message:"password not updated"})
       }
       otpmap.delete(email)
-      res.send({message:"password updated"})
+      return res.send({message:"password updated"})
 });
+
 /*token refresh route here*/
+
 router.post("/token",(req,res)=>{
     const oldrefreshToken = req.headers.authorization.split(" ")[1];
     jwt.verify(oldrefreshToken,process.env.REFRESH_TOKEN_SECRETKEY,(err,user)=>{
@@ -251,7 +264,9 @@ router.post("/token",(req,res)=>{
        const userid = {id:user?.id}
        const accessToken = generrateAccessToken(userid)
        const refreshToken = generateRefreshToken(userid)
-       res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
+       return res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
     })
 })
+
+
 module.exports = router;

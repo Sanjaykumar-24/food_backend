@@ -11,6 +11,8 @@ app.use(express.json())
 app.use(express.urlencoded({extended:false}))
 app.use(cors())
 
+/*database connection here*/
+
 mongoose.connect(process.env.URI,{
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -22,8 +24,12 @@ mongoose.connect(process.env.URI,{
     .catch((err) => {
       console.error('Database connection error 😔😔☹', err);
     });
+
+/*roter junction*/
+
 app.use('/user',userRouter)
 app.use('/admin',adminRouter)
+
 app.listen(port,()=>{
     console.log(` port http://localhost:${port} is running `);
 })

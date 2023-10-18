@@ -6,7 +6,7 @@ const adminModel = require('../schema/admin');
 const nodemailer = require('nodemailer');
 const smtpTransport = require('nodemailer-smtp-transport');
 const router = express.Router();
-
+const jwt = require('jsonwebtoken')
 const verificationCodes = new Map();
 const OTP=()=>{
     const otp=otp_generator.generate(6,{upperCaseAlphabets:true,specialChars:true,digits:true})
@@ -33,6 +33,8 @@ const transporter = nodemailer.createTransport(
 );
 
 /*otp generating route here*/
+
+
 router.post("/getotp",async(req,res)=>{
   const {email} = req.body;
   const otpvalue = otp_generator.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
@@ -118,10 +120,10 @@ router.post("/getotp",async(req,res)=>{
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        res.send('Error in sending email');
+        return res.send('Error in sending email');
       } else {
         console.log('Email sent: ' + info.response);
-        res.send('Check your email for the verification code');
+        return res.send('Check your email for the verification code');
       }
     })
  setTimeout(()=>{
@@ -129,41 +131,9 @@ router.post("/getotp",async(req,res)=>{
  },10*60*1000)
 })
 
-/*admin register route here*/
-router.post('/register', async (req, res) => {
-  const schema = Joi.object({
-    password: Joi.string().min(6).required(),
-    email: Joi.string().email().required(),
-    verifyotp:Joi.string().required()
-  });
-
-  const { error, value } = schema.validate(req.body);
-  const alreadyAdmin = await adminModel.findOne({ email: value.email });
-  if(value.verifyotp!=verificationCodes?.get(value.email)?.code)
-    {
-        res.send({message:"not verified"})
-    }
-  if (alreadyAdmin) {
-    return res.json({ message: "User is already registered" });
-  }
-  
-    const { email, password } = value;
-    const hashedPassword = await bcrypt.hash(password,10);
-
-    try {
-      const data = await adminModel.create({ email, password: hashedPassword });
-      console.log(data);
-      const userid = {id:data.id}
-      const accessToken = generrateAccessToken(userid)
-      const refreshToken = generateRefreshToken(userid)
-      return res.send({ message: "User registered successfully",accessToken:accessToken,refreshToken:refreshToken});
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({ message: "Error while registering user" });
-    }
-});
-
 /*otp verifying route here*/
+
+
 router.post("/otpverify",async(req,res)=>
 {
     const {email,code} = req.body;
@@ -173,42 +143,106 @@ router.post("/otpverify",async(req,res)=>
     try{
     if(!otp)
     {
-        res.send({message:"otp expired"})
+       return res.send({message:"otp expired"})
     }
     else if(otp.code == code && otp.exptime > Date.now())
     {
-      res.send({message:"otp verified",verifyotp:otp.code}) 
+     return res.send({message:"otp verified",verifyotp:otp.code}) 
     }
     else if(otp.code != code)
     {
-        res.send({message:"invalid otp"})
+       return res.send({message:"invalid otp"})
     }
     }
     catch(error)
     {
        console.log(error.message)
-       res.send({message:"internal server error"})
+       return res.send({message:"internal server error"})
     }
 })
 
 
+/*admin register route here*/
+
+
+router.post('/register', async (req, res) => {
+  const schema = Joi.object({
+    password: Joi.string().min(6).required(),
+    email: Joi.string().email().required(),
+    verifyotp:Joi.string().required()
+  });
+  const { error, value } = schema.validate(req.body);
+  if(error)
+  {
+   return res.send("invalid data")
+  }
+  const alreadyAdmin = await adminModel.findOne({ email: value.email });
+  if(value.verifyotp!=verificationCodes.get(value.email)?.code)
+    {
+       return res.send({message:"not verified"})
+    }
+  if (alreadyAdmin) {
+    return res.json({ message: "User is already registered" });
+  }
+    const { email, password } = value;
+    const hashedPassword = await bcrypt.hash(password,10);
+    try {
+      const data = await adminModel.create({ email, password: hashedPassword });
+      console.log(data);
+      const userid = {id:data.id}
+      const accessToken = generrateAccessToken(userid)
+      const refreshToken = generateRefreshToken(userid)
+      verificationCodes.delete(email)
+      return res.send({ message: "User registered successfully",accessToken:accessToken,refreshToken:refreshToken});
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({ message: "Error while registering user" });
+    }
+});
+
+/* login route here */
+
+router.post('/login',async(req,res)=>{
+  const {email,password} = req.body;
+  const admin = await adminModel.findOne({email:email})
+  (!admin)
+  {
+   return res.send({message:"admin not found"})
+  }
+  const hashpass = admin.password
+   bcrypt(password,hashpass,(err,result)=>{
+      if(err)
+      {
+       return res.send({message:"password wrong"})
+      }
+      if(result)
+      {
+        const userid = {id:admin.id}
+        const accessToken = generrateAccessToken(userid)
+        const refreshToken = generateRefreshToken(userid)
+       return res.send({message:"login sucessful",accessToken:accessToken,refreshToken:refreshToken})
+      }
+  })
+})
+
 
 /*admin change password here*/
+
 router.post('/changepassword', async (req, res) => {
-  const {email,password,verifyotp } = req.body;
-  if(verifyotp!=verificationCodes?.get(value.email)?.code)
+  const {email,newpass,verifyotp } = req.body;
+  if(verifyotp!=verificationCodes?.get(email)?.code)
   {
-    res.send("otp not verified")
+   return res.send("otp not verified")
   }
   const db_user = await adminModel.findOne({ email });
   if (!db_user) {
     return res.status(404).send({ message: "User not found" });
   }
-  const comp =  bcrypt.compare(password, db_user.password);
-  if (comp) {
-    return res.send({ message: "Don't use old password" });
+  if(verifyotp!=verificationCodes?.get(email)?.code)
+  {
+   return res.send({message:"otp not verified"})
   }
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(newpass, 10);
   const find = { email: email };
   const update = { password: hashedPassword };
   const options = { new: true };
@@ -217,6 +251,7 @@ router.post('/changepassword', async (req, res) => {
 
     if (updatedDocument) {
       console.log(updatedDocument);
+      verificationCodes.delete(email)
       return res.status(200).send({ message:"Password changed"});
     } else {
       console.log("Document is empty");
@@ -229,30 +264,8 @@ router.post('/changepassword', async (req, res) => {
 });
 
 
-/* login route here */
-router.post('/login',async(req,res)=>{
-  const {email,password} = req.body;
-  const admin = await adminModel.findOne({email:email})
-  (!admin)
-  {
-    res.send({message:"admin not found"})
-  }
-  const hashpass = admin.password
-   bcrypt(password,hashpass,(err,result)=>{
-      if(err)
-      {
-        res.send({message:"password wrong"})
-      }
-      if(result)
-      {
-        const userid = {id:admin.id}
-        const accessToken = generrateAccessToken(userid)
-        const refreshToken = generateRefreshToken(userid)
-        res.send({message:"login sucessful",accessToken:accessToken,refreshToken:refreshToken})
-      }
-  })
-})
 /*access token route here*/
+
 router.post('/token',async(req,res)=>{
   const oldrefreshToken = req.headers.authorization.split(" ")[1];
   jwt.verify(oldrefreshToken,process.env.REFRESH_TOKEN_SECRETKEY,(err,user)=>{
@@ -264,7 +277,8 @@ router.post('/token',async(req,res)=>{
      const userid = {id:user?.id}
      const accessToken = generrateAccessToken(userid)
      const refreshToken = generateRefreshToken(userid)
-     res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
+     return res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
   })
 })
+
 module.exports = router;
