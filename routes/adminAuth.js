@@ -31,45 +31,8 @@ const transporter = nodemailer.createTransport(
     },
   })
 );
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-router.post('/register', async (req, res) => {
-  const schema = Joi.object({
-    password: Joi.string().min(6).required(),
-    email: Joi.string().email().required(),
-    verifyotp:Joi.string().required()
-  });
-
-  const { error, value } = schema.validate(req.body);
-  const alreadyAdmin = await adminModel.findOne({ email: value.email });
-  if(value.verifyotp!=verificationCodes?.get(value.email)?.code)
-    {
-        res.send({message:"not verified"})
-    }
-  if (alreadyAdmin) {
-    return res.json({ message: "User is already registered" });
-  }
-  
-    const { email, password } = value;
-    const hashedPassword = await bcrypt.hash(password,10);
-
-    try {
-      const data = await adminModel.create({ email, password: hashedPassword });
-      console.log(data);
-      const userid = {id:data.id}
-      const accessToken = generrateAccessToken(userid)
-      const refreshToken = generateRefreshToken(userid)
-      return res.send({ message: "User registered successfully",accessToken:accessToken,refreshToken:refreshToken});
-    } catch (error) {
-      console.error(error);
-      return res.status(500).send({ message: "Error while registering user" });
-    }
-});
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*otp generating route here*/
 router.post("/getotp",async(req,res)=>{
   const {email} = req.body;
   const otpvalue = otp_generator.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
@@ -165,7 +128,42 @@ router.post("/getotp",async(req,res)=>{
    verificationCodes.delete(email)
  },10*60*1000)
 })
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*admin register route here*/
+router.post('/register', async (req, res) => {
+  const schema = Joi.object({
+    password: Joi.string().min(6).required(),
+    email: Joi.string().email().required(),
+    verifyotp:Joi.string().required()
+  });
+
+  const { error, value } = schema.validate(req.body);
+  const alreadyAdmin = await adminModel.findOne({ email: value.email });
+  if(value.verifyotp!=verificationCodes?.get(value.email)?.code)
+    {
+        res.send({message:"not verified"})
+    }
+  if (alreadyAdmin) {
+    return res.json({ message: "User is already registered" });
+  }
+  
+    const { email, password } = value;
+    const hashedPassword = await bcrypt.hash(password,10);
+
+    try {
+      const data = await adminModel.create({ email, password: hashedPassword });
+      console.log(data);
+      const userid = {id:data.id}
+      const accessToken = generrateAccessToken(userid)
+      const refreshToken = generateRefreshToken(userid)
+      return res.send({ message: "User registered successfully",accessToken:accessToken,refreshToken:refreshToken});
+    } catch (error) {
+      console.error(error);
+      return res.status(500).send({ message: "Error while registering user" });
+    }
+});
+
+/*otp verifying route here*/
 router.post("/otpverify",async(req,res)=>
 {
     const {email,code} = req.body;
@@ -193,6 +191,9 @@ router.post("/otpverify",async(req,res)=>
     }
 })
 
+
+
+/*admin change password here*/
 router.post('/changepassword', async (req, res) => {
   const {email,password,verifyotp } = req.body;
   if(verifyotp!=verificationCodes?.get(value.email)?.code)
@@ -249,6 +250,21 @@ router.post('/login',async(req,res)=>{
         const refreshToken = generateRefreshToken(userid)
         res.send({message:"login sucessful",accessToken:accessToken,refreshToken:refreshToken})
       }
+  })
+})
+/*access token route here*/
+router.token('/token',async(req,res)=>{
+  const oldrefreshToken = req.headers.authorization.split(" ")[1];
+  jwt.verify(oldrefreshToken,process.env.REFRESH_TOKEN_SECRETKEY,(err,user)=>{
+     if(err)
+     {
+      console.log(err.message)
+      return res.send({message:"access token is not valid"})
+     }
+     const userid = {id:user?.id}
+     const accessToken = generrateAccessToken(userid)
+     const refreshToken = generateRefreshToken(userid)
+     res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
   })
 })
 module.exports = router;
