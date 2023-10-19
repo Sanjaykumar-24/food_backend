@@ -37,7 +37,7 @@ app.use('/user',userRouter)
 app.use('/admin',adminRouter)
 app.use('/',trachsactionrouter)
 app.use('/update',updateRouter)
-app.use('/image',ImageRoute)
+app.use('/add',ImageRoute)
 
 
 app.listen(port,()=>{
