@@ -4,7 +4,8 @@ const fs = require("fs");
 const { google } = require("googleapis");
 const apikeys = require("../apikeys.json");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
-const router = express.Router()
+const router = express.Router();
+const categoryModel = require("../schema/products");
 const item_details = {};
 async function authorize() {
   const jwtClient = new google.auth.JWT(
@@ -69,10 +70,17 @@ router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
-  const { category, item, price } = req.body;
+  const { category, item, price ,_id} = req.body;
   if (!category || !item) {
     return res.status(400).send("Insufficient data");
   }
+
+  const result=await categoryModel.findById(_id)
+  if(result===null){
+    return res.send("category does not exist")
+  }
+  console.log(result)
+
 
   item_details.category = category;
   item_details.item = item;
@@ -98,6 +106,28 @@ router.post("/add_item", async (req, res) => {
     return res.status(200).send("Item added successfully");
   } catch (err) {
     return res.status(500).send("Error adding item");
+  }
+});
+
+router.post("/add_category", async (req, res) => {
+  const { category } = req.body;
+  if (!category) {
+    res.status(404).send("Category not found");
+  }
+
+  const add = new categoryModel({
+    category,
+  });
+
+  try {
+    const status = await add.save();
+    console.log(status);
+    res.status(200).send(`Category added ${status._id}`);
+  } catch (err) {
+    if (err.code === 11000 && err.keyPattern && err.keyValue) {
+      return res.send("Duplicate Category");
+    }
+    res.status(500).send("Category add failed");
   }
 });
 
