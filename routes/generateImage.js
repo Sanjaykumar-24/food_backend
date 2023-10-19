@@ -5,12 +5,7 @@ const { google } = require("googleapis");
 const apikeys = require("../apikeys.json");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
 const router = express.Router()
-<<<<<<< HEAD
-=======
-
->>>>>>> 0c3f90102a3166c0a99f63359d3fe21e295474df
 const item_details = {};
-
 async function authorize() {
   const jwtClient = new google.auth.JWT(
     apikeys.client_email,
