@@ -5,7 +5,12 @@ const { google } = require("googleapis");
 const apikeys = require("../apikeys.json");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
 const router = express.Router()
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0c3f90102a3166c0a99f63359d3fe21e295474df
 const item_details = {};
+
 async function authorize() {
   const jwtClient = new google.auth.JWT(
     apikeys.client_email,
@@ -60,16 +65,16 @@ async function uploadFile(authClient) {
 
       const imageUrl = result.data.webViewLink;
       console.log("Image URL:", imageUrl);
-
       resolve(file);
+
     } catch (error) {
       rejected(error);
     }
   });
 }
 
-
 router.post("/upload_image", async (req, res) => {
+
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
@@ -88,18 +93,18 @@ router.post("/upload_image", async (req, res) => {
       .toBuffer();
 
     fs.writeFile("./temp/foodimages.jpg", imageBuffer, (err) => {
-      console.log("ERROR in CONVERSION", err);
+      if(err){
+        console.log("Err while converting buffer")
+      }
     });
 
     const authClient = await authorize();
     await uploadFile(authClient);
     console.log("PIC URL=",item_details.url)
-    console.log("Image cat",item_details.catagory,item_details.item)
     return res.status(200).send("Image upload Success");
   } catch (err) {
     console.log(err);
   }
 });
-
 
 module.exports = router

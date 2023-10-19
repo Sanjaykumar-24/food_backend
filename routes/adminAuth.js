@@ -206,7 +206,7 @@ router.post('/register', async (req, res) => {
 router.post('/login',async(req,res)=>{
   const {email,password} = req.body;
   const admin = await adminModel.findOne({email:email})
-  (!admin)
+  if(!admin)
   {
    return res.send({message:"admin not found"})
   }
