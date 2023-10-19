@@ -8,9 +8,6 @@ router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
   const { rollno, rechargeamount } = req.body;
   const userId = req.userId
   try {
-    
-   
-
     const admin = await adminModel.findById(userId);
     console.log(admin)
     const details = { admin: admin.email, rollno: rollno, amount: rechargeamount, date: new Date() };

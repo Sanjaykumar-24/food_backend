@@ -31,7 +31,7 @@ mongoose.connect(process.env.URI,{
       console.error('Database connection error 😔😔☹', err);
     });
 
-/*roter junction*/
+/*router junction*/
 
 app.use('/user',userRouter)
 app.use('/admin',adminRouter)
