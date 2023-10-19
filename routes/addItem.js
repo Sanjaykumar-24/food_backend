@@ -70,17 +70,26 @@ router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
-  const { category, item, price ,_id} = req.body;
+  const { category, item, price, _id } = req.body;
+  if (_id.length != 24) {
+    return res.send("Invalid ID");
+  }
   if (!category || !item) {
     return res.status(400).send("Insufficient data");
   }
 
-  const result=await categoryModel.findById(_id)
-  if(result===null){
-    return res.send("category does not exist")
+  const result = await categoryModel.findById(_id);
+  if (result === null) {
+    return res.send("category does not exist");
   }
-  console.log(result)
-
+  const subres = await categoryModel.findOne({
+    _id,
+    categorydetails: { $elemMatch: { productname: item } },
+  });
+  if (subres) {
+    return res.send("Item already exist");
+  }
+  console.log("REULT===", subres);
 
   item_details.category = category;
   item_details.item = item;
@@ -102,21 +111,34 @@ router.post("/add_item", async (req, res) => {
 
     await uploadFile(authClient);
     console.log("Item Details===>", item_details);
-
+    const result = await categoryModel.updateOne(
+      { _id },
+      {
+        $push: {
+          categorydetails: {
+            productname: item_details.item,
+            productprice: item_details.price,
+            productimage: item_details.url,
+          },
+        },
+      }
+    );
+    console.log("Respone", result);
     return res.status(200).send("Item added successfully");
   } catch (err) {
-    return res.status(500).send("Error adding item");
+    return res.status(500).send(`Error adding item ${err}`);
   }
 });
 
 router.post("/add_category", async (req, res) => {
-  const { category } = req.body;
-  if (!category) {
-    res.status(404).send("Category not found");
+  const { addCategory } = req.body;
+
+  if (!addCategory) {
+    return res.status(404).send("Category not found");
   }
 
   const add = new categoryModel({
-    category,
+    category: addCategory,
   });
 
   try {
@@ -124,10 +146,39 @@ router.post("/add_category", async (req, res) => {
     console.log(status);
     res.status(200).send(`Category added ${status._id}`);
   } catch (err) {
+    console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
       return res.send("Duplicate Category");
     }
     res.status(500).send("Category add failed");
+  }
+});
+
+router.get("/get_categories", async (req, res) => {
+  const category = await categoryModel.find({}, "category");
+  res.json(category);
+});
+
+router.get("/get_categories_details", async (req, res) => {
+  const { category } = req.body;
+  try {
+    const result = await categoryModel.find({ category: category });
+    if (result.length == 0) {
+      return res.json(`Category ${category} does not exist`);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).send("Fetch Failed");
+  }
+});
+
+router.delete("/remove_category", async (req, res) => {
+  const { _id } = req.body;
+  try {
+    const result = await categoryModel.deleteOne({ _id });
+    return res.status(200).send("Successfully deleted");
+  } catch (err) {
+    return res.status(500).send("Failed!");
   }
 });
 
