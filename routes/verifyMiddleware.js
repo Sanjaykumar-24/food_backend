@@ -17,6 +17,7 @@ const AdminverifyMiddleware=(async(req,res,next)=>{
         console.log(user);
         if(!isadmin)
         return res.send({message:"not a admin"})
+        req.userId = user.id;
         next();
     })
 })    
