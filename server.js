@@ -7,7 +7,7 @@ const userRouter = require('./routes/userAuth')
 const adminRouter = require('./routes/adminAuth')
 const updateRouter = require('./routes/userUpdation')
 const trachsactionrouter = require('./routes/transaction')
-const ImageRoute = require('./routes/generateImage')
+const addItem = require('./routes/addItem')
 require('dotenv').config()
 const port = process.env.PORT||2001;
 const app = express();
@@ -37,7 +37,7 @@ app.use('/user',userRouter)
 app.use('/admin',adminRouter)
 app.use('/',trachsactionrouter)
 app.use('/update',updateRouter)
-app.use('/image',ImageRoute)
+app.use('/add',addItem)
 
 
 app.listen(port,()=>{

@@ -17,7 +17,6 @@ async function authorize() {
   return jwtClient;
 }
 
-
 async function uploadFile(authClient) {
   return new Promise(async (resolve, rejected) => {
     const drive = google.drive({ version: "v3", auth: authClient });
@@ -32,7 +31,7 @@ async function uploadFile(authClient) {
       const file = await drive.files.create({
         resource: fileMetaData,
         media: {
-          body: fs.createReadStream("./temp/foodimages.jpg"), // File to be uploaded
+          body: fs.createReadStream("./foodimages.jpg"), // File to be uploaded
           mimeType: "image/jpg",
         },
         fields: "id",
@@ -51,7 +50,6 @@ async function uploadFile(authClient) {
         },
       });
 
-      
       // Get the sharing link to the image
       const result = await drive.files.get({
         fileId: file.data.id,
@@ -61,25 +59,24 @@ async function uploadFile(authClient) {
       const imageUrl = result.data.webViewLink;
       console.log("Image URL:", imageUrl);
       resolve(file);
-
     } catch (error) {
       rejected(error);
     }
   });
 }
 
-router.post("/upload_image", async (req, res) => {
-
+router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
-  const { catagory, item } = req.body;
-  if (!catagory || !item) {
+  const { category, item, price } = req.body;
+  if (!category || !item) {
     return res.status(400).send("Insufficient data");
   }
 
-  item_details.catagory = catagory;
+  item_details.category = category;
   item_details.item = item;
+  item_details.price = price;
   const uploadedImage = req.files.image;
 
   try {
@@ -87,19 +84,21 @@ router.post("/upload_image", async (req, res) => {
       .toFormat("jpg")
       .toBuffer();
 
-    fs.writeFile("./temp/foodimages.jpg", imageBuffer, (err) => {
-      if(err){
-        console.log("Err while converting buffer")
+    fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
+      if (err) {
+        console.log("Err while converting buffer");
       }
     });
 
     const authClient = await authorize();
+
     await uploadFile(authClient);
-    console.log("PIC URL=",item_details.url)
-    return res.status(200).send("Image upload Success");
+    console.log("Item Details===>", item_details);
+
+    return res.status(200).send("Item added successfully");
   } catch (err) {
-    console.log(err);
+    return res.status(500).send("Error adding item");
   }
 });
 
-module.exports = router
+module.exports = router;
