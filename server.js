@@ -25,7 +25,7 @@ mongoose.connect(process.env.URI,{
     serverSelectionTimeoutMS: 5000,
 })
     .then(() => {
-      console.log('Database connected successfully 😀😃😄');
+      console.log('Database connected successfully 😀😃😄')
     })
     .catch((err) => {
       console.error('Database connection error 😔😔☹', err);
