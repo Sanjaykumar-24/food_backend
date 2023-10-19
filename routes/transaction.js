@@ -8,17 +8,41 @@ router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
   const { rollno, rechargeamount } = req.body;
   const userId = req.userId
   try {
-    const user = await userModel.findOne({ rollno })
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    
+   
+
+    const admin = await adminModel.findById(userId);
+    console.log(admin)
+    const details = { admin: admin.email, rollno: rollno, amount: rechargeamount, date: new Date() };
+    console.log(details);
+    const updatedTransaction = await transactionModel.findOne({});
+    console.log(updatedTransaction)
+    if(!updatedTransaction)
+    {
+      await transactionModel.create(details)
+      return res.json({message:"null value solved"})
     }
-    const numericRechargeAmount = Number(rechargeamount);
-    user.amount += numericRechargeAmount;
-    await user.save();
-    const admin = await adminModel.findById(userId)
-    const details = {admin:admin.email,rollno:rollno,amount:rechargeamount,Date:new Date()}
-    const addtrans = await transactionModel.findOneAndUpdate({})
-    return res.status(200).json({ message: 'Recharge successful', user });
+    
+    console.log(updatedTransaction);
+    updatedTransaction.rechargetransaction.push(details);
+    const isupdated=await updatedTransaction.save()
+
+
+    console.log("Transaction updated:", isupdated);
+if (isupdated) {
+  const user = await userModel.findOne({ rollno })
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  const numericRechargeAmount = Number(rechargeamount);
+  user.amount += numericRechargeAmount;
+  await user.save();
+  return res.status(200).json({ message: 'Recharge successful', user });
+} else {
+  console.log("Transaction not found or updated.");
+  return res.send({message:"recharge failed"})
+}
+ 
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Internal Server Error' });
