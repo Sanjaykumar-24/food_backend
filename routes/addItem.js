@@ -69,12 +69,12 @@ router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
-  const { catagory, item, price } = req.body;
-  if (!catagory || !item) {
+  const { category, item, price } = req.body;
+  if (!category || !item) {
     return res.status(400).send("Insufficient data");
   }
 
-  item_details.catagory = catagory;
+  item_details.category = category;
   item_details.item = item;
   item_details.price = price;
   const uploadedImage = req.files.image;
