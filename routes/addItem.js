@@ -159,8 +159,9 @@ router.get("/get_categories", async (req, res) => {
   res.json(category);
 });
 
-router.get("/get_categories_details", async (req, res) => {
-  const { category } = req.body;
+router.get("/get_categories_details/:category", async (req, res) => {
+  console.log(req.params);
+  const { category } = req.params;
   try {
     const result = await categoryModel.find({ category: category });
     if (result.length == 0) {
@@ -176,9 +177,42 @@ router.delete("/remove_category", async (req, res) => {
   const { _id } = req.body;
   try {
     const result = await categoryModel.deleteOne({ _id });
-    return res.status(200).send("Successfully deleted");
+    console.log(result);
+    if (result.deletedCount == 0) {
+      return res.send("Id is not valid");
+    }
+    return res.send("Successfully deleted");
   } catch (err) {
     return res.status(500).send("Failed!");
+  }
+});
+
+router.delete("/remove_item", async (req, res) => {
+  const { category_id, item_id } = req.body;
+  try {
+    const result = await categoryModel.updateOne(
+      { _id: category_id },
+      { $pull: { categorydetails: { _id: item_id } } }
+    );
+    if (result.modifiedCount == 0) {
+      return res.send("Invalid ID");
+    }
+    if (result.modifiedCount == 1) {
+      return res.send("Successfully deleted");
+    }
+    console.log(result);
+  } catch (err) {
+    res.status(500).send("err");
+    console.log(`err ${err}`);
+  }
+});
+
+router.patch("/item_update", async (req, res) => {
+  const { category_id, item_id, update } = req.body;
+
+  try {
+  } catch (err) {
+    console.log(err);
   }
 });
 
