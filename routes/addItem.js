@@ -4,7 +4,7 @@ const fs = require("fs");
 const { google } = require("googleapis");
 const apikeys = require("../apikeys.json");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
-const router = express.Router()
+const router = express.Router();
 
 const item_details = {};
 
@@ -18,7 +18,6 @@ async function authorize() {
   await jwtClient.authorize();
   return jwtClient;
 }
-
 
 async function uploadFile(authClient) {
   return new Promise(async (resolve, rejected) => {
@@ -34,7 +33,7 @@ async function uploadFile(authClient) {
       const file = await drive.files.create({
         resource: fileMetaData,
         media: {
-          body: fs.createReadStream("./temp/foodimages.jpg"), // File to be uploaded
+          body: fs.createReadStream("./foodimages.jpg"), // File to be uploaded
           mimeType: "image/jpg",
         },
         fields: "id",
@@ -53,7 +52,6 @@ async function uploadFile(authClient) {
         },
       });
 
-      
       // Get the sharing link to the image
       const result = await drive.files.get({
         fileId: file.data.id,
@@ -63,25 +61,24 @@ async function uploadFile(authClient) {
       const imageUrl = result.data.webViewLink;
       console.log("Image URL:", imageUrl);
       resolve(file);
-
     } catch (error) {
       rejected(error);
     }
   });
 }
 
-router.post("/upload_image", async (req, res) => {
-
+router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
-  const { catagory, item } = req.body;
+  const { catagory, item, price } = req.body;
   if (!catagory || !item) {
     return res.status(400).send("Insufficient data");
   }
 
   item_details.catagory = catagory;
   item_details.item = item;
+  item_details.price = price;
   const uploadedImage = req.files.image;
 
   try {
@@ -89,19 +86,21 @@ router.post("/upload_image", async (req, res) => {
       .toFormat("jpg")
       .toBuffer();
 
-    fs.writeFile("./temp/foodimages.jpg", imageBuffer, (err) => {
-      if(err){
-        console.log("Err while converting buffer")
+    fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
+      if (err) {
+        console.log("Err while converting buffer");
       }
     });
 
     const authClient = await authorize();
+
     await uploadFile(authClient);
-    console.log("PIC URL=",item_details.url)
-    return res.status(200).send("Image upload Success");
+    console.log("Item Details===>", item_details);
+
+    return res.status(200).send("Item added successfully");
   } catch (err) {
-    console.log(err);
+    return res.status(500).send("Error adding item");
   }
 });
 
-module.exports = router
+module.exports = router;
