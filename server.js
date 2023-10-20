@@ -6,8 +6,10 @@ const mongoose = require("mongoose");
 const userRouter = require("./routes/userAuth");
 const adminRouter = require("./routes/adminAuth");
 const updateRouter = require("./routes/userUpdation");
-const trachsactionrouter = require("./routes/transaction");
+const transactionrouter = require("./routes/transaction");
 const itemRouter = require("./routes/addItem");
+const itemOrder = require('./routes/orderItems')
+
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -35,9 +37,10 @@ mongoose
 
 app.use("/user", userRouter);
 app.use("/admin", adminRouter);
-app.use("/", trachsactionrouter);
+app.use("/", transactionrouter);
 app.use("/update", updateRouter);
 app.use("/item", itemRouter);
+app.use('/order',itemOrder)
 
 app.listen(port, () => {
   console.log(`port http://localhost:${port} is running `);
