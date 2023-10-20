@@ -1,17 +1,18 @@
 const express = require("express");
 const sharp = require("sharp");
 const fs = require("fs");
+require("dotenv").config();
 const { google } = require("googleapis");
-const apikeys = require("../apikeys.json");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
 const router = express.Router();
 const categoryModel = require("../schema/products");
 const item_details = {};
+
 async function authorize() {
-  const jwtClient = new google.auth.JWT(
-    apikeys.client_email,
+  const jwtClient = await new google.auth.JWT(
+    process.env.CLIENT_EMAIL,
     null,
-    apikeys.private_key,
+    process.env.PRIVATE_KEY.replace(/"/g, ""),
     SCOPE
   );
   await jwtClient.authorize();
