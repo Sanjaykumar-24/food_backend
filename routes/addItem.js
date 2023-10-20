@@ -254,4 +254,21 @@ router.patch("/item_update", async (req, res) => {
   }
 });
 
+router.patch("/category_update", async (req, res) => {
+  const { _id, category } = req.body;
+  if (!_id || !category) {
+    return res.send("insufficient data");
+  }
+  try {
+    const result = await categoryModel.updateOne({ _id }, { category });
+    if (result.acknowledged) {
+      return res.send("Update Successfull");
+    } else {
+      return res.send("Update Failed");
+    }
+  } catch (err) {
+    res.status(500).send("err");
+  }
+});
+
 module.exports = router;
