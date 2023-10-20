@@ -40,5 +40,5 @@ app.use("/update", updateRouter);
 app.use("/item", itemRouter);
 
 app.listen(port, () => {
-  console.log(` port http://localhost:${port} is running `);
+  console.log(`port http://localhost:${port} is running `);
 });

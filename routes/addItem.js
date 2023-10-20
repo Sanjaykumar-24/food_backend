@@ -212,9 +212,44 @@ router.delete("/remove_item", async (req, res) => {
 
 router.patch("/item_update", async (req, res) => {
   const { category_id, item_id, update } = req.body;
+  if (!category_id || !item_id || !update) {
+    return res.send("Insufficient Data");
+  }
 
   try {
+    const { productname, productprice, productstock, productimage } = update;
+    const newData = {};
+
+    if (productname) {
+      newData[`categorydetails.$[elem].productname`] = productname;
+    }
+    if (productprice) {
+      newData[`categorydetails.$[elem].productprice`] = Number(productprice);
+    }
+    if (productstock) {
+      newData[`categorydetails.$[elem].productstock`] = Number(productstock);
+    }
+    if (productimage) {
+      newData[`categorydetails.$[elem].productimage`] = productimage;
+    }
+    const arrayFilters = [
+      {
+        "elem._id": item_id,
+      },
+    ];
+
+    const result = await categoryModel.updateOne(
+      { _id: category_id },
+      { $set: newData },
+      { arrayFilters: arrayFilters }
+    );
+    if (result.acknowledged) {
+      return res.send("Item modified Successfully");
+    } else {
+      return res.send("Data invalid");
+    }
   } catch (err) {
+    res.status(500).send("Failed");
     console.log(err);
   }
 });
