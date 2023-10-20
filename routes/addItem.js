@@ -71,7 +71,7 @@ router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
-  const { category, item, price, _id } = req.body;
+  const { category, item, price, _id, item_stock } = req.body;
   if (_id.length != 24) {
     return res.send("Invalid ID");
   }
@@ -95,6 +95,7 @@ router.post("/add_item", async (req, res) => {
   item_details.category = category;
   item_details.item = item;
   item_details.price = price;
+  item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
 
   try {
@@ -119,6 +120,7 @@ router.post("/add_item", async (req, res) => {
           categorydetails: {
             productname: item_details.item,
             productprice: item_details.price,
+            productstock: item_details.item_stock,
             productimage: item_details.url,
           },
         },
