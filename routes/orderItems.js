@@ -70,6 +70,7 @@ router.post('/user', UserverifyMiddleware, async (req, res) => {
     userDetails.orders = userDetails.orders.concat(userOrders);
 
     await userDetails.save();
+    item.productstock-=
 
     res.status(201).json({ message: 'Orders created successfully', orders: userOrders });
   } catch (error) {
