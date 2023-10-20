@@ -16,6 +16,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
 
     for (const order of orders) {
       const { category_id, item_id, quantity } = order;
+      console.log(order);
 
       category = await categoryModel.findById(category_id);
       if (!category) {
@@ -51,19 +52,10 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       userOrders.push(newOrder);
       item.productstock -= quantity;
       await item.save();
-      const newData = {};
-      newData[`categorydetails.$[elem].productstock`] =
-        userDetails.amount - totalAmount;
-      const arrayFilters = [
-        {
-          "elem._id": item_id,
-        },
-      ];
 
-      await categoryModel.updateOne(
-        { _id: category_id },
-        { $set: newData },
-        { arrayFilters: arrayFilters }
+      await categoryModel.findOneAndUpdate(
+        { _id: category_id, "categorydetails._id": item_id },
+        { $inc: { "categorydetails.$.productstock": -quantity } }
       );
     }
 
