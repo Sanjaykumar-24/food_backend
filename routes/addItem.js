@@ -8,6 +8,8 @@ const router = express.Router();
 const categoryModel = require("../schema/products");
 const item_details = {};
 
+//! Function to authorize, to upload the image to drive
+
 async function authorize() {
   const jwtClient = await new google.auth.JWT(
     process.env.CLIENT_EMAIL,
@@ -19,21 +21,22 @@ async function authorize() {
   return jwtClient;
 }
 
+//! Function to upload the image to google drive and retrive the URL
+
 async function uploadFile(authClient) {
   return new Promise(async (resolve, rejected) => {
     const drive = google.drive({ version: "v3", auth: authClient });
 
     var fileMetaData = {
       name: item_details.item,
-      parents: ["1jydbPP0jEN1sa0srHy3j9vVxPrrr_CnU"], // A folder ID to which the file will get uploaded
+      parents: ["1jydbPP0jEN1sa0srHy3j9vVxPrrr_CnU"],
     };
 
     try {
-      // Upload the file
       const file = await drive.files.create({
         resource: fileMetaData,
         media: {
-          body: fs.createReadStream("./foodimages.jpg"), // File to be uploaded
+          body: fs.createReadStream("./foodimages.jpg"),
           mimeType: "image/jpg",
         },
         fields: "id",
@@ -43,7 +46,6 @@ async function uploadFile(authClient) {
       console.log("File ID:", file.data.id);
       item_details.url = "https://drive.google.com/uc?id=" + file.data.id;
 
-      // Make the uploaded file public
       await drive.permissions.create({
         fileId: file.data.id,
         requestBody: {
@@ -52,7 +54,6 @@ async function uploadFile(authClient) {
         },
       });
 
-      // Get the sharing link to the image
       const result = await drive.files.get({
         fileId: file.data.id,
         fields: "webViewLink",
@@ -66,6 +67,8 @@ async function uploadFile(authClient) {
     }
   });
 }
+
+//! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
 router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
@@ -133,6 +136,8 @@ router.post("/add_item", async (req, res) => {
   }
 });
 
+//! POST method to add an category to the collection with (categoryname) empty item details wil be created with the category given
+
 router.post("/add_category", async (req, res) => {
   const { addCategory } = req.body;
 
@@ -157,10 +162,14 @@ router.post("/add_category", async (req, res) => {
   }
 });
 
+//! GET method to get all the categories in the DB
+
 router.get("/get_categories", async (req, res) => {
   const category = await categoryModel.find({}, "category");
   res.json(category);
 });
+
+//! GET method to get the specified category details(category name) returns all the items in the given category
 
 router.get("/get_categories_details/:category", async (req, res) => {
   console.log(req.params);
@@ -176,6 +185,8 @@ router.get("/get_categories_details/:category", async (req, res) => {
   }
 });
 
+//! DELETE method to remove a given category (category _id)
+
 router.delete("/remove_category", async (req, res) => {
   const { _id } = req.body;
   try {
@@ -189,6 +200,8 @@ router.delete("/remove_category", async (req, res) => {
     return res.status(500).send("Failed!");
   }
 });
+
+//! DELETE method to remove an item in a specified Category (category _id, item _id)
 
 router.delete("/remove_item", async (req, res) => {
   const { category_id, item_id } = req.body;
@@ -209,6 +222,8 @@ router.delete("/remove_item", async (req, res) => {
     console.log(`err ${err}`);
   }
 });
+
+//! PATCH method to update an item in the specified category (category _id ,item _id, update *fields*)
 
 router.patch("/item_update", async (req, res) => {
   const { category_id, item_id, update } = req.body;
@@ -253,6 +268,8 @@ router.patch("/item_update", async (req, res) => {
     console.log(err);
   }
 });
+
+//! PATCH method to update a category name in the DB (category _id,new category name)
 
 router.patch("/category_update", async (req, res) => {
   const { _id, category } = req.body;
