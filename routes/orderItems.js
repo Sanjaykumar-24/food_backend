@@ -4,6 +4,7 @@ const categoryModel = require("../schema/products");
 const UserOrder = require("../schema/userOrder");
 const { UserverifyMiddleware } = require("../routes/verifyMiddleware");
 const router = express.Router();
+
 router.post("/user", UserverifyMiddleware, async (req, res) => {
   try {
     let item = null;
@@ -78,10 +79,12 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     userDetails.orders = userDetails.orders.concat(userOrders);
 
     await userDetails.save();
+    const summary = {};
 
-    res
-      .status(201)
-      .json({ message: "Orders created successfully", orders: userOrders });
+    res.status(201).json({
+      message: "Orders created successfully",
+      orders: userOrders,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to create orders" });
