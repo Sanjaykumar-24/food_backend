@@ -35,7 +35,7 @@ const UserverifyMiddleware=(async(req,res,next)=>{
         const isuser = await userModel.findById(user.id)
         console.log(isuser);
         if(!isuser)
-        return res.send({message:"not a admin"})
+        return res.send({message:"not a user"})
         req.userId = user.id;
         next();
     })

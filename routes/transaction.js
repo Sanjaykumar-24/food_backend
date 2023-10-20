@@ -54,7 +54,8 @@ if (isupdated) {
 router.post('/amountTransfer', UserverifyMiddleware, async (req, res) => {
   try {
     const { rollno, amount } = req.body;
-    // rollno=rollno.toLowerCase();
+    const lower=rollno.toLowerCase();
+    rollno=lower
     // console.log(rollno);
     const userId = req.userId;
     if(!rollno||!amount)
@@ -95,12 +96,7 @@ router.post('/amountTransfer', UserverifyMiddleware, async (req, res) => {
     res.send({ message: "Internal Server Error" });
   }
 });
-
-
-
-
-
-
+ 
 
 
 module.exports = router

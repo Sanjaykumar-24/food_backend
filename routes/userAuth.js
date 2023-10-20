@@ -195,6 +195,7 @@ router.post("/register",async(req,res)=>{
       const userid = {id:data.id};
       const accessToken = generrateAccessToken(userid)
       const refreshToken = generateRefreshToken(userid)
+      otpmap.delete(value.email)
       return res.json({message:"user registered sucessfully",accessToken:accessToken,refreshToken:refreshToken})
     } catch (error) {
       console.error(error);
@@ -208,7 +209,8 @@ router.post("/register",async(req,res)=>{
 
 router.post("/login",async(req,res)=>{
     const {email,password} = req.body;
-    const user = await userModel.findOne({email:email})
+    const user = await userModel.findOne({email})
+    console.log(user)
     if(!user)
     {
         return res.send({message:"user not found"})
