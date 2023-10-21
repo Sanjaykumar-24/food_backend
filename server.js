@@ -9,7 +9,7 @@ const updateRouter = require("./routes/userUpdation");
 const transactionrouter = require("./routes/transaction");
 const itemRouter = require("./routes/addItem");
 const itemOrder = require('./routes/orderItems')
-
+const reportRoute = require('./routes/report')
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -41,6 +41,7 @@ app.use("/", transactionrouter);
 app.use("/update", updateRouter);
 app.use("/item", itemRouter);
 app.use('/order',itemOrder)
+app.use('/report',reportRoute)
 
 app.listen(port, () => {
   console.log(`port http://localhost:${port} is running `);

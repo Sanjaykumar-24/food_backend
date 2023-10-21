@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const transactionItemSchema = new mongoose.Schema({
     admin:{
         type:String,
