@@ -4,13 +4,16 @@ const {AdminverifyMiddleware, UserverifyMiddleware} = require('./verifyMiddlewar
 const transactionModel = require('../schema/transactiondb')
 const userModel = require('../schema/user');
 const adminModel = require('../schema/admin');
+const transferModel = require('../schema/transerAmount');
+
+/**recharge route here */
+
 router.post('/recharge', AdminverifyMiddleware, async (req, res) => {
   const { rollno, rechargeamount } = req.body;
   if(!rollno||!rechargeamount)
   {
     return res.send({message:"all field required"})
   }
-  // rollno=rollno.toLowerCase();      
   const userId = req.userId
   try {
     const admin = await adminModel.findById(userId);
@@ -51,23 +54,26 @@ if (isupdated) {
   }
 });
 
+/**amount transfer route here */
+
 router.post('/amountTransfer', UserverifyMiddleware, async (req, res) => {
+
   try {
-    const { rollno, amount } = req.body;
-    const lower=rollno.toLowerCase();
-    rollno=lower
-    // console.log(rollno);
+    let { rollno,amount } = req.body;
+    const lower = rollno.toLowerCase();
+    rollno = lower;
     const userId = req.userId;
     if(!rollno||!amount)
     {
-      return receiver.send({message:"all fields required"})
+      return res.send({message:"all fields required"})
     }
-
     const sender = await userModel.findOne({ _id: userId }); 
     const receiver = await userModel.findOne({ rollno: rollno });
-
-    console.log("hello");
-    console.log(sender);
+    
+    if(sender.rollno == receiver.rollno)
+    {
+      res.send({message:"you cannot send to you"})
+    }
     if (!sender) {
       return res.send({ message: "sender not found" });
     }
@@ -75,9 +81,9 @@ router.post('/amountTransfer', UserverifyMiddleware, async (req, res) => {
       return res.send({ message: "receiver not found" });
     }
 
-    const senderAmount = Number(sender.amount);
-    const receiverAmount = Number(receiver.amount);
-    const transferAmount = Number(amount);
+    let senderAmount = Number(sender.amount);
+    let receiverAmount = Number(receiver.amount);
+    let transferAmount = Number(amount);
 
     if (senderAmount < transferAmount) {
       return res.send({ message: "Insufficient Balance" });
@@ -88,15 +94,21 @@ router.post('/amountTransfer', UserverifyMiddleware, async (req, res) => {
 
     await sender.save();
     await receiver.save();
+ 
+    const transfer = await transferModel.create({senderRollno:sender.rollno,receiverRollno:receiver.rollno,amountTransfered:amount})
+    await transfer.save();
 
+    if(!transfer)
+    {
+       res.send({message:"data not stored in database"})
+    }
     console.log("money transferred");
-    return res.send({ message: "Money transferred" ,sender:sender,receiver,receiver});
+    return res.send({ message: "Money transferred" ,sender:sender,receiver});
   } catch (error) {
     console.log("error: " + error.message);
     res.send({ message: "Internal Server Error" });
   }
 });
  
-
 
 module.exports = router
