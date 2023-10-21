@@ -140,8 +140,6 @@ router.post("/getotp",async(req,res)=>{
 
 router.post("/otpverify",async(req,res)=>
 {
-
-    
     try{
     const {email,code} = req.body;
     console.log(otpmap.get(email))
@@ -186,7 +184,7 @@ router.post("/register",async(req,res)=>{
     console.log(error.message)
     return res.send({message:"invalid data"})
    }
-   const alreadyUser = await userModel.findOne({ email: value.email });
+    const alreadyUser = await userModel.findOne({ email: value.email });
     if (alreadyUser) {
     return res.json({ message: "User is already registered" });
       }
@@ -194,13 +192,13 @@ router.post("/register",async(req,res)=>{
       {
           return  res.send({message:"not verified"})
       }
-    try {
+     try{
         const hashedpassword = await bcrypt.hash(value.password,10);
         if(!hashedpassword)
         {
             return res.send({message:"password not hashed"})
         }
-        value.password = hashedpassword
+      value.password = hashedpassword
       const data = await userModel.create(value);
       const userid = {id:data.id};
       const accessToken = generrateAccessToken(userid)
@@ -218,6 +216,7 @@ router.post("/register",async(req,res)=>{
 
 
 router.post("/login",async(req,res)=>{
+
     const {email,password} = req.body;
     const user = await userModel.findOne({email})
     console.log(user)
@@ -227,7 +226,7 @@ router.post("/login",async(req,res)=>{
     }
     const hashpass = user.password
     const id = {id:user.id};
-    bcrypt.compare(password,hashpass,(err,result)=>{
+     bcrypt.compare(password,hashpass,(err,result)=>{
         if(err)
         {
             return res.send({message:"error while comparing password"})
