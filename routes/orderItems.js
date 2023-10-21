@@ -1,10 +1,11 @@
-const express = require('express');
-const userModel = require('../schema/user');
-const categoryModel = require('../schema/products');
-const UserOrder = require('../schema/userOrder');
-const { UserverifyMiddleware } = require('../routes/verifyMiddleware');
+const express = require("express");
+const userModel = require("../schema/user");
+const categoryModel = require("../schema/products");
+const UserOrder = require("../schema/userOrder");
+const { UserverifyMiddleware } = require("../routes/verifyMiddleware");
 const router = express.Router();
-router.post('/user', UserverifyMiddleware, async (req, res) => {
+
+router.post("/user", UserverifyMiddleware, async (req, res) => {
   try {
     let item = null;
     let category = null;
@@ -16,15 +17,18 @@ router.post('/user', UserverifyMiddleware, async (req, res) => {
 
     for (const order of orders) {
       const { category_id, item_id, quantity } = order;
+      console.log(order);
 
       category = await categoryModel.findById(category_id);
       if (!category) {
-        return res.status(404).json({ error: 'Category not found' });
+        return res.status(404).json({ error: "Category not found" });
       }
 
       item = category.categorydetails.find((item) => item._id == item_id);
       if (!item) {
-        return res.status(404).json({ error: 'Item not found in the category' });
+        return res
+          .status(404)
+          .json({ error: "Item not found in the category" });
       }
 
       if (Number(quantity) > Number(item.productstock)) {
@@ -49,6 +53,11 @@ router.post('/user', UserverifyMiddleware, async (req, res) => {
       userOrders.push(newOrder);
       item.productstock -= quantity;
       await item.save();
+
+      await categoryModel.findOneAndUpdate(
+        { _id: category_id, "categorydetails._id": item_id },
+        { $inc: { "categorydetails.$.productstock": -quantity } }
+      );
     }
 
     if (Number(totalAmount) !== Number(totalPrice)) {
@@ -70,11 +79,15 @@ router.post('/user', UserverifyMiddleware, async (req, res) => {
     userDetails.orders = userDetails.orders.concat(userOrders);
     
     await userDetails.save();
+    const summary = {};
 
-    res.status(201).json({ message: 'Orders created successfully', orders: userOrders });
+    res.status(201).json({
+      message: "Orders created successfully",
+      orders: userOrders,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to create orders' });
+    res.status(500).json({ error: "Failed to create orders" });
   }
 });
 
