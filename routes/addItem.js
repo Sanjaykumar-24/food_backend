@@ -12,7 +12,7 @@ const item_details = {};
 
 async function authorize() {
   console.log("Authorizing",process.env.CLIENT_EMAIL);
-  console.log("Key",process.env.PRIVATE_KEY.replace(/"/g, ""))
+  console.log("Key",process.env.PRIVATE_KEY)
   const jwtClient = await new google.auth.JWT(
     process.env.CLIENT_EMAIL,
     null,
