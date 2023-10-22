@@ -10,6 +10,9 @@ const AdminverifyMiddleware = async (req, res, next) => {
 
   try {
       const AccessToken = req.headers.authorization.split(" ")[1];
+      if(!AccessToken){
+        return res.send({message:"Illegal Access"})
+      }
       jwt.verify(
         AccessToken,
         process.env.ACCESS_TOKEN_SECRETKEY,
