@@ -11,6 +11,8 @@ const item_details = {};
 //! Function to authorize, to upload the image to drive
 
 async function authorize() {
+  console.log("Authorizing",process.env.CLIENT_EMAIL);
+  console.log("Key",process.env.PRIVATE_KEY.replace(/"/g, ""))
   const jwtClient = await new google.auth.JWT(
     process.env.CLIENT_EMAIL,
     null,
@@ -25,6 +27,7 @@ async function authorize() {
 
 async function uploadFile(authClient) {
   return new Promise(async (resolve, rejected) => {
+    console.log("Uploading")
     const drive = google.drive({ version: "v3", auth: authClient });
 
     var fileMetaData = {
@@ -117,6 +120,7 @@ router.post("/add_item", async (req, res) => {
     console.log("File write success");
 
     const authClient = await authorize();
+    console.log("Authenticated")
 
     await uploadFile(authClient);
     console.log("Item Details===>", item_details);
