@@ -11,7 +11,7 @@ const adminModel = require("../schema/admin");
 const router = express.Router();
 
 router.post("/user", async (req, res) => {
-  // const userId = req.userId;
+  const userId = req.userId;
   const { orders, totalPrice } = req.body;
 
   if (!orders || !totalPrice || totalPrice <= 0) {
@@ -20,10 +20,7 @@ router.post("/user", async (req, res) => {
   try {
     let amount = 0;
 
-    const userBal = await userModel.findById(
-      "6534e5aee3caef5b89424b1b",
-      "amount"
-    );
+    const userBal = await userModel.findById(userId, "amount");
 
     if (userBal.amount < totalPrice) {
       return res.json({ message: "Insufficirnt balance" });
@@ -78,7 +75,7 @@ router.post("/user", async (req, res) => {
 
     await userModel.updateOne(
       {
-        _id: "6534e5aee3caef5b89424b1b",
+        _id: userId,
       },
       {
         $inc: { amount: -amount },
@@ -98,7 +95,7 @@ router.post("/user", async (req, res) => {
     }
 
     const add = new UserOrderModel({
-      userId: "6534e5aee3caef5b89424b1b",
+      userId: userId,
       orders: orderHistory,
       date: Date.now(),
     });
