@@ -10,6 +10,7 @@ const transactionrouter = require("./routes/transaction");
 const itemRouter = require("./routes/addItem");
 const itemOrder = require('./routes/orderItems')
 const reportRoute = require('./routes/report')
+const qrRoute = require('./routes/qrcodeGenerate')
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -42,6 +43,7 @@ app.use("/update", updateRouter);
 app.use("/item", itemRouter);
 app.use('/order',itemOrder)
 app.use('/report',reportRoute)
+app.use('/generate',qrRoute)
 
 app.listen(port, () => {
   console.log(`port http://localhost:${port} is running `);
