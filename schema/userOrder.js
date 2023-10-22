@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema({
   category_id: {
@@ -13,7 +13,7 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  totalPrice: {
+  price: {
     type: Number,
     required: true,
   },
@@ -26,11 +26,11 @@ const userOrderSchema = new mongoose.Schema({
   },
   orders: [orderSchema],
   date: {
-    type: Date, 
+    type: Date,
     default: Date.now,
   },
 });
 
-const UserOrder = mongoose.model('UserOrder', userOrderSchema);
+const UserOrder = mongoose.model("UserOrder", userOrderSchema);
 
 module.exports = UserOrder;

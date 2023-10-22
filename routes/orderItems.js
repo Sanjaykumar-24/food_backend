@@ -1,7 +1,7 @@
 const express = require("express");
 const userModel = require("../schema/user");
 const categoryModel = require("../schema/products");
-const UserOrder = require("../schema/userOrder");
+const UserOrderModel = require("../schema/userOrder");
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
@@ -10,87 +10,105 @@ const AdminOrder = require("../schema/adminOrder");
 const adminModel = require("../schema/admin");
 const router = express.Router();
 
-router.post("/user", UserverifyMiddleware, async (req, res) => {
-  try {
-    let item = null;
-    let category = null;
-    const userId = req.userId;
-    const { orders, totalPrice } = req.body;
-    const userDetails = await userModel.findById(userId);
+router.post("/user", async (req, res) => {
+  // const userId = req.userId;
+  const { orders, totalPrice } = req.body;
 
-    if (userDetails.amount < totalPrice) {
-      return res.json({ msg: "Insufficient Balance" });
+  if (!orders || !totalPrice || totalPrice <= 0) {
+    return res.json({ message: "Invalid details" });
+  }
+  try {
+    let amount = 0;
+
+    const userBal = await userModel.findById(
+      "6534e5aee3caef5b89424b1b",
+      "amount"
+    );
+
+    if (userBal.amount < totalPrice) {
+      return res.json({ message: "Insufficirnt balance" });
     }
     const userOrders = [];
-    let totalAmount = 0;
+    const orderHistory = [];
 
     for (const order of orders) {
-      const { category_id, item_id, quantity } = order;
-      console.log(order);
+      console.log(order.category_id, "    ", order.item_id);
 
-      category = await categoryModel.findById(category_id);
-      if (!category) {
-        return res.status(404).json({ error: "Category not found" });
+      const result = await categoryModel.find(
+        {
+          _id: order.category_id,
+          "categorydetails._id": order.item_id,
+        },
+        {
+          "categorydetails.$": 1,
+        }
+      );
+
+      if (result[0].categorydetails[0].productstock < order.quantity) {
+        return res.json({
+          message: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
+        });
+      }
+      amount += result[0].categorydetails[0].productprice * order.quantity;
+      if (userBal < amount) {
+        return res.json({ message: "Insufficient balance while billing" });
       }
 
-      item = category.categorydetails.find((item) => item._id == item_id);
-      if (!item) {
-        return res
-          .status(404)
-          .json({ error: "Item not found in the category" });
+      const orderList = {};
+      const ordHistory = {};
+      orderList.productname = result[0].categorydetails[0].productname;
+      orderList.productprice = result[0].categorydetails[0].productprice;
+      orderList.quantity = order.quantity;
+      orderList.totalcost =
+        result[0].categorydetails[0].productprice * order.quantity;
+      userOrders.push(orderList);
+
+      ordHistory.category_id = order.category_id;
+      ordHistory.item_id = order.item_id;
+      ordHistory.quantity = order.quantity;
+      ordHistory.price =
+        result[0].categorydetails[0].productprice * order.quantity;
+
+      orderHistory.push(ordHistory);
+    }
+
+    if (amount != totalPrice) {
+      return res.send({ Message: "Calculation Err!" });
+    }
+
+    await userModel.updateOne(
+      {
+        _id: "6534e5aee3caef5b89424b1b",
+      },
+      {
+        $inc: { amount: -amount },
       }
+    );
 
-      if (Number(quantity) > Number(item.productstock)) {
-        console.log("Insufficient Quantity");
-        return res.status(400).json({ message: "Insufficient Quantity" });
-      }
-      const orderTotalPrice = item.productprice * quantity;
-      totalAmount += orderTotalPrice;
-      const newOrder = new UserOrder({
-        userId,
-        orders: [
-          {
-            category_id,
-            item_id,
-            quantity,
-            totalPrice: orderTotalPrice,
-            date: Date.now(),
-          },
-        ],
-      });
-
-      userOrders.push(newOrder);
-      item.productstock -= quantity;
-      await item.save();
-
-      await categoryModel.findOneAndUpdate(
-        { _id: category_id, "categorydetails._id": item_id },
-        { $inc: { "categorydetails.$.productstock": -quantity } }
+    for (const order of orders) {
+      await categoryModel.updateOne(
+        {
+          _id: order.category_id,
+          "categorydetails._id": order.item_id,
+        },
+        {
+          $inc: { "categorydetails.$.productstock": -order.quantity },
+        }
       );
     }
 
-    if (Number(totalAmount) !== Number(totalPrice)) {
-      console.log("Right amount for the product is not received");
-      return res.status(400).json({ message: "Total Amount is not correct" });
-    }
-
-    if (!userDetails.orders) {
-      userDetails.orders = [];
-    }
-    await UserOrder.insertMany(userOrders);
-
-    userDetails.amount -= totalAmount;
-    userDetails.orders = userDetails.orders.concat(userOrders);
-
-    await userDetails.save();
-
-    res.status(201).json({
-      message: "Orders created successfully",
-      orders: userOrders,
+    const add = new UserOrderModel({
+      userId: "6534e5aee3caef5b89424b1b",
+      orders: orderHistory,
+      date: Date.now(),
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create orders" });
+
+    const status = await add.save();
+    console.log(status);
+    res.json({ userOrders });
+  } catch (err) {
+    console.log(err);
+    return res.send("err while billing");
   }
 });
 
