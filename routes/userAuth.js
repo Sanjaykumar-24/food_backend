@@ -221,7 +221,7 @@ router.post("/login",async(req,res)=>{
     if(!email||!password)
     {
         console.log("all fields required");
-        res.send({message:"all feilds required"});
+        res.send({message:"all feilds required"})
     }
     const user = await userModel.findOne({email})
     console.log(user)
