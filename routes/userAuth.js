@@ -218,6 +218,11 @@ router.post("/register",async(req,res)=>{
 router.post("/login",async(req,res)=>{
 
     const {email,password} = req.body;
+    if(!email||!password)
+    {
+        console.log("all fields required");
+        res.send({message:"all feilds required"});
+    }
     const user = await userModel.findOne({email})
     console.log(user)
     if(!user)
@@ -230,6 +235,11 @@ router.post("/login",async(req,res)=>{
         if(err)
         {
             return res.send({message:"error while comparing password"})
+        }
+        if(!result)
+        {
+            console.log("Incorrect password!");
+            return res.send({message:"Incorrect password"})
         }
         if(result)
         {

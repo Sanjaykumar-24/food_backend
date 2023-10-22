@@ -214,14 +214,23 @@ router.post('/register', async (req, res) => {
 router.post('/login',async(req,res)=>{
   try {
     const {email,password} = req.body;
+    if(!email || !password)
+    {
+      console.log("all feilds required");
+      return res.send({message:"all fields required"})
+    }
     const admin = await adminModel.findOne({email:email})
     if(!admin)
     {
      return res.send({message:"admin not found"})
     }
     const hashpass = admin.password
-     bcrypt(password,hashpass,(err,result)=>{
+    bcrypt.compare(password,hashpass,(err,result)=>{
         if(err)
+        {
+         return res.send({message:"Hashing error"})
+        }
+        if(!result)
         {
          return res.send({message:"password wrong"})
         }
@@ -230,7 +239,7 @@ router.post('/login',async(req,res)=>{
           const userid = {id:admin.id}
           const accessToken = generrateAccessToken(userid)
           const refreshToken = generateRefreshToken(userid)
-         return res.send({message:"login sucessful",accessToken:accessToken,refreshToken:refreshToken})
+          return res.send({message:"login sucessful",accessToken:accessToken,refreshToken:refreshToken})
         }
     })
     
