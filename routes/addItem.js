@@ -6,13 +6,17 @@ const { google } = require("googleapis");
 const SCOPE = ["https://www.googleapis.com/auth/drive"];
 const router = express.Router();
 const categoryModel = require("../schema/products");
+const {
+  AdminverifyMiddleware,
+  UserverifyMiddleware,
+} = require("./verifyMiddleware");
 const item_details = {};
 
 //! Function to authorize, to upload the image to drive
 
 async function authorize() {
-  console.log("Authorizing",process.env.CLIENT_EMAIL);
-  console.log("Key",process.env.PRIVATE_KEY)
+  console.log("Authorizing", process.env.CLIENT_EMAIL);
+  console.log("Key", process.env.PRIVATE_KEY);
   const jwtClient = await new google.auth.JWT(
     process.env.CLIENT_EMAIL,
     null,
@@ -27,7 +31,7 @@ async function authorize() {
 
 async function uploadFile(authClient) {
   return new Promise(async (resolve, rejected) => {
-    console.log("Uploading")
+    console.log("Uploading");
     const drive = google.drive({ version: "v3", auth: authClient });
 
     var fileMetaData = {
@@ -73,7 +77,7 @@ async function uploadFile(authClient) {
 
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
-router.post("/add_item", async (req, res) => {
+router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
@@ -103,13 +107,13 @@ router.post("/add_item", async (req, res) => {
   item_details.price = price;
   item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
-  console.log("Destructure finished")
+  console.log("Destructure finished");
 
   try {
     const imageBuffer = await sharp(uploadedImage.data)
       .toFormat("jpg")
       .toBuffer();
-      console.log("conversion finished")
+    console.log("conversion finished");
 
     fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
       if (err) {
@@ -120,7 +124,7 @@ router.post("/add_item", async (req, res) => {
     console.log("File write success");
 
     const authClient = await authorize();
-    console.log("Authenticated")
+    console.log("Authenticated");
 
     await uploadFile(authClient);
     console.log("Item Details===>", item_details);
@@ -146,7 +150,7 @@ router.post("/add_item", async (req, res) => {
 
 //! POST method to add an category to the collection with (categoryname) empty item details wil be created with the category given
 
-router.post("/add_category", async (req, res) => {
+router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
   const { addCategory } = req.body;
 
   if (!addCategory) {
@@ -277,8 +281,6 @@ router.patch("/item_update", async (req, res) => {
   }
 });
 
-//! PATCH method to update a category name in the DB (category _id,new category name)
-
 router.patch("/category_update", async (req, res) => {
   const { _id, category } = req.body;
   if (!_id || !category) {
@@ -293,6 +295,25 @@ router.patch("/category_update", async (req, res) => {
     }
   } catch (err) {
     res.status(500).send("err");
+  }
+});
+
+router.get("/user/get_categories", async (req, res) => {
+  const category = await categoryModel.find({}, "category");
+  res.json(category);
+});
+
+router.get("/user/get_categories_details/:category", async (req, res) => {
+  console.log(req.params);
+  const { category } = req.params;
+  try {
+    const result = await categoryModel.find({ category: category });
+    if (result.length == 0) {
+      return res.json(`Category ${category} does not exist`);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).send("Fetch Failed");
   }
 });
 
