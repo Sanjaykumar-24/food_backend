@@ -244,7 +244,7 @@ router.post("/login",async(req,res)=>{
 
 router.post("/changepassword",async(req,res)=>{
       const {email,newpass,verifyotp} = req.body
-      if(value.verifyotp!=otpmap?.get(value.email)?.code)
+      if(verifyotp!=otpmap?.get(email)?.code)
       {
         return res.send("otp not verified")
       }
