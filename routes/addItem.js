@@ -100,17 +100,21 @@ router.post("/add_item", async (req, res) => {
   item_details.price = price;
   item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
+  console.log("Destructure finished")
 
   try {
     const imageBuffer = await sharp(uploadedImage.data)
       .toFormat("jpg")
       .toBuffer();
+      console.log("conversion finished")
 
     fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
       if (err) {
         console.log("Err while converting buffer");
       }
     });
+
+    console.log("File write success");
 
     const authClient = await authorize();
 
