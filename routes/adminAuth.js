@@ -32,12 +32,17 @@ const transporter = nodemailer.createTransport(
   })
 );
 
-/*otp generating route here*/
+/*otp generating for registering a admin route here*/
 
 
-router.post("/getotp",async(req,res)=>{
+router.post("/registergetotp",async(req,res)=>{
   try {
     const {email} = req.body;
+    const admin = await adminModel.findOne({email:email})
+    if(admin)
+    {
+      res.send({message:"admin with this mail already exists"})
+    }
     const otpvalue = otp_generator.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
     console.log(otpvalue)
     const exptime = 10*60*1000
@@ -137,6 +142,119 @@ router.post("/getotp",async(req,res)=>{
     return res.send({message:"Internal server error"})
   }
 })
+
+
+
+/**generate otp for changing password for a admin */
+
+router.post("/forgetgetotp",async(req,res)=>{
+  try {
+    const {email} = req.body;
+    const admin = await adminModel.findOne({email:email})
+    if(!admin)
+    {
+      res.send({message:"admin with this mail not found"})
+    }
+    const otpvalue = otp_generator.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
+    console.log(otpvalue)
+    const exptime = 10*60*1000
+    verificationCodes.set(email,{code:otpvalue,exptime:exptime+Date.now()})
+    const mailOptions = {
+        to: email,
+        subject: 'Password Reset Verification Code',
+        html: ` <html>
+             <head>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    margin: 0;
+                    padding: 0;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #fff;
+                    border-radius: 5px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+        
+                .header {
+                    background-color: #007BFF;
+                    color: #fff;
+                    text-align: center;
+                    padding: 20px;
+                }
+        
+                .header h1 {
+                    font-size: 24px;
+                }
+        
+                .content {
+                    padding: 20px;
+                }
+        
+                .content p {
+                    font-size: 16px;
+                }
+        
+                .otp-code {
+                    font-size: 28px;
+                    text-align: center;
+                    padding: 10px;
+                    background-color: #007BFF;
+                    color: #fff;
+                    border-radius: 5px;
+                }
+        
+                .footer {
+                    text-align: center;
+                    margin-top: 20px;
+                }
+        
+                .footer p {
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>OTP Verification</h1>
+                </div>
+                <div class="content">
+                    <p>Dear User,</p>
+                    <p>Your OTP code for verification is:</p>
+                    <div class="otp-code">${otpvalue}</div>
+                </div>
+                <div class="footer">
+                    <p>This is an automated message, please do not reply.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        `}
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log(error);
+          return res.send('Error in sending email');
+        } else {
+          console.log('Email sent: ' + info.response);
+          return res.send('Check your email for the verification code');
+        }
+      })
+   const timeID =  setTimeout(()=>{
+     verificationCodes.delete(email)
+   },exptime)
+   clearTimeout(timeID)
+    
+  } catch (error) {
+    console.log("error :"+error.message);
+    return res.send({message:"Internal server error"})
+  }
+})
+
 
 /*otp verifying route here*/
 

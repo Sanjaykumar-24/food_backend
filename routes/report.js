@@ -1,8 +1,6 @@
 const express = require('express')
 const excelJs = require('exceljs')
-let fs = require('fs')
 const transactionModel = require('../schema/transactiondb')
-const { sheets } = require('googleapis/build/src/apis/sheets')
 const router = express.Router()
 router.get("/transaction",async(req,res)=>{
    try
@@ -16,6 +14,10 @@ router.get("/transaction",async(req,res)=>{
         {header:"Date",key:'date',width:25}
     ]
     const total = await transactionModel.find({});
+    if(total.length==0)
+    {
+        res.send({message:"no transactions found"})
+    }
     const data = total[0].rechargetransaction;
     if(data.length==0)
     {
