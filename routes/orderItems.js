@@ -18,8 +18,8 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     const { orders, totalPrice } = req.body;
     const userDetails = await userModel.findById(userId);
 
-    if(userDetails.amount<totalPrice){
-      return res.json({msg:"Insufficient Balance"})
+    if (userDetails.amount < totalPrice) {
+      return res.json({ msg: "Insufficient Balance" });
     }
     const userOrders = [];
     let totalAmount = 0;
@@ -68,7 +68,6 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
         { $inc: { "categorydetails.$.productstock": -quantity } }
       );
     }
-
 
     if (Number(totalAmount) !== Number(totalPrice)) {
       console.log("Right amount for the product is not received");

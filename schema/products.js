@@ -29,6 +29,10 @@ const categorySchema = new mongoose.Schema({
   categorydetails: {
     type: [productSchema],
   },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 const categoryModel = mongoose.model("Category", categorySchema);
 module.exports = categoryModel;
