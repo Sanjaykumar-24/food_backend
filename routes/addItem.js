@@ -176,7 +176,7 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
 
 //! GET method to get all the categories in the DB
 
-router.get("/get_categories", async (req, res) => {
+router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
   const category = await categoryModel.find({}, "category");
   res.json(category);
 });
@@ -199,7 +199,7 @@ router.get("/get_categories_details/:category", async (req, res) => {
 
 //! DELETE method to remove a given category (category _id)
 
-router.delete("/remove_category", async (req, res) => {
+router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
   const { _id } = req.body;
   try {
     const result = await categoryModel.deleteOne({ _id });
@@ -215,7 +215,7 @@ router.delete("/remove_category", async (req, res) => {
 
 //! DELETE method to remove an item in a specified Category (category _id, item _id)
 
-router.delete("/remove_item", async (req, res) => {
+router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
   const { category_id, item_id } = req.body;
   try {
     const result = await categoryModel.updateOne(
@@ -237,7 +237,7 @@ router.delete("/remove_item", async (req, res) => {
 
 //! PATCH method to update an item in the specified category (category _id ,item _id, update *fields*)
 
-router.patch("/item_update", async (req, res) => {
+router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
     return res.send("Insufficient Data");
@@ -281,7 +281,7 @@ router.patch("/item_update", async (req, res) => {
   }
 });
 
-router.patch("/category_update", async (req, res) => {
+router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
   const { _id, category } = req.body;
   if (!_id || !category) {
     return res.send("insufficient data");
@@ -298,23 +298,29 @@ router.patch("/category_update", async (req, res) => {
   }
 });
 
-router.get("/user/get_categories", async (req, res) => {
+//!  user routes
+
+router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   const category = await categoryModel.find({}, "category");
   res.json(category);
 });
 
-router.get("/user/get_categories_details/:category", async (req, res) => {
-  console.log(req.params);
-  const { category } = req.params;
-  try {
-    const result = await categoryModel.find({ category: category });
-    if (result.length == 0) {
-      return res.json(`Category ${category} does not exist`);
+router.get(
+  "/user/get_categories_details/:category",
+  UserverifyMiddleware,
+  async (req, res) => {
+    console.log(req.params);
+    const { category } = req.params;
+    try {
+      const result = await categoryModel.find({ category: category });
+      if (result.length == 0) {
+        return res.json(`Category ${category} does not exist`);
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).send("Fetch Failed");
     }
-    res.json(result);
-  } catch (err) {
-    res.status(500).send("Fetch Failed");
   }
-});
+);
 
 module.exports = router;
