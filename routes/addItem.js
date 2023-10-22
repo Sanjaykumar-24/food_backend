@@ -156,7 +156,7 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
   if (!addCategory) {
     return res.status(404).send("Category not found");
   }
-  
+
   try {
     const add = new categoryModel({
       category: addCategory,
