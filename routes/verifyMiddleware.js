@@ -11,7 +11,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
   try {
       const AccessToken = req.headers.authorization.split(" ")[1];
       if(!AccessToken){
-        return res.send({message:"Illegal Access"})
+        return res.status(401).send({message:"Illegal Access"})
       }
       jwt.verify(
         AccessToken,
@@ -40,6 +40,10 @@ const AdminverifyMiddleware = async (req, res, next) => {
 const UserverifyMiddleware = async (req, res, next) => {
     try {
         const AccessToken = req.headers.authorization.split(" ")[1];
+        if(!AccessToken)
+        {
+          res.status(401).send({message:"Illegal Access"})
+        }
         jwt.verify(
           AccessToken,
           process.env.ACCESS_TOKEN_SECRETKEY,
