@@ -331,7 +331,7 @@ router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   console.log(
     "---------  USER   ---------     Getting Categories     ---------"
   );
-  const category = await categoryModel.find({}, "category");
+  const category = await categoryModel.find({}, "category categoryImage");
   res.status(200).json(category);
 });
 
