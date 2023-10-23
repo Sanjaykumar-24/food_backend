@@ -202,19 +202,25 @@ router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
 
 //! GET method to get the specified category details(category name) returns all the items in the given category
 
-router.get("/get_categories_details/:category", async (req, res) => {
-  console.log("---------     Getting Item details In a Category     ---------");
-  const { category } = req.params;
-  try {
-    const result = await categoryModel.find({ category: category });
-    if (result.length == 0) {
-      return res.status(409).json(`Category ${category} does not exist`);
+router.get(
+  "/get_categories_details/:category",
+  AdminverifyMiddleware,
+  async (req, res) => {
+    console.log(
+      "---------     Getting Item details In a Category     ---------"
+    );
+    const { category } = req.params;
+    try {
+      const result = await categoryModel.find({ category: category });
+      if (result.length == 0) {
+        return res.status(409).json(`Category ${category} does not exist`);
+      }
+      res.json(result);
+    } catch (err) {
+      res.status(500).send("Fetch Failed");
     }
-    res.json(result);
-  } catch (err) {
-    res.status(500).send("Fetch Failed");
   }
-});
+);
 
 //! DELETE method to remove a given category (category _id)
 
