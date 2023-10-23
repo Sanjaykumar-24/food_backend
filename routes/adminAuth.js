@@ -347,23 +347,25 @@ router.post("/login", async (req, res) => {
       console.log("all feilds required");
       return res.status(400).send({ message: "all fields required" });
     }
-    const userdetails= await login_model.find({email});
-    if(userdetails?.isLogged)
-    {
-      return res.status(401).send({message:"this account is already in use"});
+    const userdetails = await login_model.findOne({ email }); // Use findOne to find a single document
+
+if (userdetails) { // Check if a document with the given email exists
+    if (userdetails.isLogged) {
+        return res.status(401).send({ message: "This account is already in use" });
+    } else {
+        userdetails.email = email; 
+        userdetails.isLogged = true; 
+
+        await userdetails.save(); 
     }
-    else
-    {
-      userdetails?.email=email
-      if(!userdetails.islLogged)
-      {
-        userdetails.isLogged=true;
-        userdetails.save();
-      }
-      else{
-      return res.status(401).send({message:"this account is already in use"});
-      }
-    }
+} else {
+    const newUser = new login_model({
+        email: email,
+        isLogged: true
+    });
+    await newUser.save();
+}
+
     const admin = await adminModel.findOne({ email: email });
     if (!admin) {
       return res.status(401).send({ message: "admin not found" });
