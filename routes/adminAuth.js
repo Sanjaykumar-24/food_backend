@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const login_model = require("../schema/logindetails");
 const verificationCodes = new Map();
 
 const OTP = () => {
@@ -345,6 +346,23 @@ router.post("/login", async (req, res) => {
     if (!email || !password) {
       console.log("all feilds required");
       return res.status(400).send({ message: "all fields required" });
+    }
+    const userdetails= await login_model.find({email});
+    if(userdetails?.islogged)
+    {
+      return res.status(401).send({message:"this account is already in use"});
+    }
+    else
+    {
+      userdetails.email=email
+      if(!userdetails.islogged)
+      {
+        userdetails.islogged=true;
+        userdetails.save();
+      }
+      else{
+      return res.status(401).send({message:"this account is already in use"});
+      }
     }
     const admin = await adminModel.findOne({ email: email });
     if (!admin) {
