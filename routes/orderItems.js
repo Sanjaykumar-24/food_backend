@@ -15,7 +15,7 @@ router.post("/user",UserverifyMiddleware, async (req, res) => {
   const { orders, totalPrice } = req.body;
 
   if (!orders || !totalPrice || totalPrice <= 0) {
-    return res.json({ message: "Invalid details" });
+    return res.status(422).json({ message: "Invalid details" });
   }
   try {
     let amount = 0;
@@ -23,7 +23,7 @@ router.post("/user",UserverifyMiddleware, async (req, res) => {
     const userBal = await userModel.findById(userId, "amount");
 
     if (userBal.amount < totalPrice) {
-      return res.json({ message: "Insufficirnt balance" });
+      return res.status(422).json({ message: "Insufficirnt balance" });
     }
     const userOrders = [];
     const orderHistory = [];
@@ -42,13 +42,13 @@ router.post("/user",UserverifyMiddleware, async (req, res) => {
       );
 
       if (result[0].categorydetails[0].productstock < order.quantity) {
-        return res.json({
+        return res.status(503).json({
           message: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
         });
       }
       amount += result[0].categorydetails[0].productprice * order.quantity;
       if (userBal < amount) {
-        return res.json({ message: "Insufficient balance while billing" });
+        return res.status(422).json({ message: "Insufficient balance while billing" });
       }
 
       const orderList = {};
@@ -70,7 +70,7 @@ router.post("/user",UserverifyMiddleware, async (req, res) => {
     }
 
     if (amount != totalPrice) {
-      return res.send({ Message: "Calculation Err!" });
+      return res.status(500).send({ Message: "Calculation Err!" });
     }
 
     await userModel.updateOne(
@@ -105,7 +105,7 @@ router.post("/user",UserverifyMiddleware, async (req, res) => {
     res.json({ userOrders });
   } catch (err) {
     console.log(err);
-    return res.send("err while billing");
+    return res.status(500).send("err while billing");
   }
 });
 
@@ -122,11 +122,11 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
 
     if (!adminDetails) {
       console.log("admin not found");
-      return res.send({ message: "admin not found" });
+      return res.status(401).send({ message: "admin not found" });
     }
     if (!userDetails) {
       console.log("user not found");
-      return res.send({ message: "user not found" });
+      return res.status(401).send({ message: "user not found" });
     }
 
     for (const order of orders) {

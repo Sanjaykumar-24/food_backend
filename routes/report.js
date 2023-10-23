@@ -16,12 +16,12 @@ router.get("/transaction",async(req,res)=>{
     const total = await transactionModel.find({});
     if(total.length==0)
     {
-        res.send({message:"no transactions found"})
+        res.status(404).send({message:"no transactions found"})
     }
     const data = total[0].rechargetransaction;
     if(data.length==0)
     {
-        res.send({message:"no transactions found"})
+        res.status(401).send({message:"no transactions found"})
     }
     data.map((item)=>{
         sheet.addRow({
@@ -31,14 +31,14 @@ router.get("/transaction",async(req,res)=>{
             date:item.date
         })
     })
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=transactionReport.xlsx');
+    res.status(200).setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.status(200).setHeader('Content-Disposition', 'attachment; filename=transactionReport.xlsx');
     const excel = await workbook.xlsx.writeBuffer()
-    res.send(excel)
+    res.status(200).send(excel)
    }
    catch(error)
    {
-  res.send({message:"error"})
+  res.status(500).send({message:"error"})
    }
 })
 module.exports = router

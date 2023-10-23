@@ -36,7 +36,7 @@ router.post("/registergetotp",async(req,res)=>{
         const user = await userModel.findOne({email:email})
         if(user)
         {
-            res.send({message:"user with this email already exist"})
+            res.status(422).send({message:"user with this email already exist"})
         }
         const otpvalue = otp.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
         console.log(otpvalue)
@@ -121,10 +121,10 @@ router.post("/registergetotp",async(req,res)=>{
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
               console.log(error);
-             return res.send('Error in sending email');
+             return res.status(500).send('Error in sending email');
             } else {
               console.log('Email sent: ' + info.response);
-              return res.send('Check your email for the verification code');
+              return res.status(200).send('Check your email for the verification code in Spam or Inbox');
             }
           })
        const timeId = setTimeout(()=>{
@@ -134,7 +134,7 @@ router.post("/registergetotp",async(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.send({message:"Internal server error"})
+        return res.status(500).send({message:"Internal server error"})
     }
 })
 
@@ -147,7 +147,7 @@ router.post("/forgetgetotp",async(req,res)=>{
         const user = await userModel.findOne({email:email})
         if(!user)
         {
-            res.send({message:"user with this email not found"})
+            res.status(401).send({message:"user with this email not found"})
         }
         const otpvalue = otp.generate(4,{digits:true,upperCaseAlphabets:false,lowerCaseAlphabets:false,specialChars:false})
         console.log(otpvalue)
@@ -232,10 +232,10 @@ router.post("/forgetgetotp",async(req,res)=>{
           transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
               console.log(error);
-             return res.send('Error in sending email');
+             return res.status(500).send('Error in sending email');
             } else {
               console.log('Email sent: ' + info.response);
-              return res.send('Check your email for the verification code');
+              return res.status(200).send('Check your email for the verification code in Spam or Inbox');
             }
           })
        const timeId = setTimeout(()=>{
@@ -245,7 +245,7 @@ router.post("/forgetgetotp",async(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.send({message:"Internal server error"})
+        return res.status(500).send({message:"Internal server error"})
     }
 })
 
@@ -262,21 +262,21 @@ router.post("/otpverify",async(req,res)=>
     console.log(otp)
     if(!otp)
     {
-        return  res.send({message:"otp expired"})
+        return  res.status(401).send({message:"otp expired"})
     }
     else if(otp.code == code && otp.exptime > Date.now())
     {
-        return  res.send({message:"otp verified",verifyotp:otp.code})
+        return  res.status(200).send({message:"otp verified",verifyotp:otp.code})
     }
     else if(otp.code != code)
     {
-        return  res.send({message:"invalid otp"})
+        return  res.status(401).send({message:"invalid otp"})
     }
     }
     catch(error)
     {
        console.log(error.message)
-       return  res.send({message:"internal server error"})
+       return  res.status(500).send({message:"internal server error"})
     }
 })
 
@@ -297,21 +297,21 @@ router.post("/register",async(req,res)=>{
    if(error)
    {
     console.log(error.message)
-    return res.send({message:"invalid data"})
+    return res.status(422).send({message:"invalid data"})
    }
     const alreadyUser = await userModel.findOne({ email: value.email });
     if (alreadyUser) {
-    return res.json({ message: "User is already registered" });
+    return res.status(422).json({ message: "User is already registered" });
       }
       if(value.verifyotp!=otpmap?.get(value.email)?.code)
       {
-          return  res.send({message:"not verified"})
+          return  res.status(401).send({message:"not verified"})
       }
      try{
         const hashedpassword = await bcrypt.hash(value.password,10);
         if(!hashedpassword)
         {
-            return res.send({message:"password not hashed"})
+            return res.status(500).send({message:"password not hashed"})
         }
       value.password = hashedpassword
       const data = await userModel.create(value);
@@ -319,10 +319,10 @@ router.post("/register",async(req,res)=>{
       const accessToken = generrateAccessToken(userid)
       const refreshToken = generateRefreshToken(userid)
       otpmap.delete(value.email)
-      return res.json({message:"user registered sucessfully",accessToken:accessToken,refreshToken:refreshToken})
+      return res.status(200).json({message:"user registered sucessfully",accessToken:accessToken,refreshToken:refreshToken})
     } catch (error) {
       console.error(error);
-      return res.status(500).send({ message: "Error while registering user" });
+      return res.status(500).send({ message: "Internal server Error" });
     }
 })
 
@@ -331,60 +331,73 @@ router.post("/register",async(req,res)=>{
 
 
 router.post("/login",async(req,res)=>{
+    try {
+        const {email,password} = req.body;
+        if(!email||!password)
+        {
+            console.log("all fields required");
+            res.status(422).send({message:"all feilds required"})
+        }
+        const user = await userModel.findOne({email})
+        console.log(user)
+        if(!user)
+        {
+            return res.status(401).send({message:"user not found"})
+        }
+        const hashpass = user.password
+        const id = {id:user.id};
+         bcrypt.compare(password,hashpass,(err,result)=>{
+            if(err)
+            {
+                return res.status(500).send({message:"error while comparing password"})
+            }
+            if(!result)
+            {
+                console.log("Incorrect password!");
+                return res.status(401).send({message:"Incorrect password"})
+            }
+            if(result)
+            {
+                const accessToken = generrateAccessToken(id);
+                const refreshToken = generateRefreshToken(id);
+                return res.status(200).send({message:"password is correct",accessToken:accessToken,refreshToken:refreshToken})
+            }
+        })
+        
+    } catch (error) {
+        console.error("error: "+ error.message);
+      return res.status(500).send({ message: "Internal server error" });
+    }
 
-    const {email,password} = req.body;
-    if(!email||!password)
-    {
-        console.log("all fields required");
-        res.send({message:"all feilds required"})
-    }
-    const user = await userModel.findOne({email})
-    console.log(user)
-    if(!user)
-    {
-        return res.send({message:"user not found"})
-    }
-    const hashpass = user.password
-    const id = {id:user.id};
-     bcrypt.compare(password,hashpass,(err,result)=>{
-        if(err)
-        {
-            return res.send({message:"error while comparing password"})
-        }
-        if(!result)
-        {
-            console.log("Incorrect password!");
-            return res.send({message:"Incorrect password"})
-        }
-        if(result)
-        {
-            const accessToken = generrateAccessToken(id);
-            const refreshToken = generateRefreshToken(id);
-            return res.send({message:"password is correct",accessToken:accessToken,refreshToken:refreshToken})
-        }
-    })
 })
 
 /*chang password route here*/
 
 router.post("/changepassword",async(req,res)=>{
-      const {email,newpass,verifyotp} = req.body
-      if(verifyotp!=otpmap?.get(email)?.code)
-      {
-        return res.send("otp not verified")
-      }
-      const hashpassnew = await bcrypt.hash(newpass,10)
-      if(!hashpassnew)
-      {
-        return res.send({message:"password not hashed"})
-      }
-      const user = await userModel.updateOne({email:email},{$set:{password:hashpassnew}})
-      if(!user)
-      {
-        return res.send({message:"password not updated"})
-      }
-      otpmap.delete(email)
-      return res.send({message:"password updated"})
+
+    try {
+        const {email,newpass,verifyotp} = req.body
+        if(verifyotp!=otpmap?.get(email)?.code)
+        {
+        return res.status(401).send("otp not verified")
+        }
+        const hashpassnew = await bcrypt.hash(newpass,10)
+        if(!hashpassnew)
+        {
+        return res.status(500).send({message:"password not hashed"})
+        }
+        const user = await userModel.updateOne({email:email},{$set:{password:hashpassnew}})
+        if(!user)
+        {
+        return res.status(500).send({message:"password not updated"})
+        }
+        otpmap.delete(email)
+        return res.status(200).send({message:"password updated"})
+        
+    } catch (error) {
+        console.error("error: "+ error.message);
+        return res.status(500).send({ message: "Internal server error" });
+    }
 });
 
 /*token refresh route here*/
@@ -392,21 +405,25 @@ router.post("/changepassword",async(req,res)=>{
 router.post("/token",(req,res)=>{
     try {
         const oldrefreshToken = req.headers.authorization.split(" ")[1];
+        if(!oldrefreshToken)
+        {
+            return res.status(422).send({message:"illigal access"})
+        }
         jwt.verify(oldrefreshToken,process.env.REFRESH_TOKEN_SECRETKEY,(err,user)=>{
            if(err)
            {
             console.log(err.message)
-            return res.send({message:"access token is not valid"})
+            return res.status(401).send({message:"access token is not valid"})
            }
            const userid = {id:user?.id}
            const accessToken = generrateAccessToken(userid)
            const refreshToken = generateRefreshToken(userid)
-           return res.send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
+           return res.status(200).send({message:"token generated",accessToken:accessToken,refreshToken:refreshToken})
         })
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.send({message:"Internal server error"})
+        return res.status(500).send({message:"Internal server error"})
     }
 })
 

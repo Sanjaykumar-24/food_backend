@@ -142,10 +142,10 @@ router.post("/registergetotp", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        return res.send("Error in sending email");
+        return res.status(500).send("Error in sending email");
       } else {
         console.log("Email sent: " + info.response);
-        return res.send("Check your email for the verification code");
+        return res.status(200).send("Check your email for the verification code in spam or inbox");
       }
     });
     const timeID = setTimeout(() => {
@@ -165,7 +165,7 @@ router.post("/forgetgetotp", async (req, res) => {
     const { email } = req.body;
     const admin = await adminModel.findOne({ email: email });
     if (!admin) {
-      return res.send({ message: "admin with this mail not found" });
+      return res.status(404).send({ message: "admin with this mail not found" });
     }
     const otpvalue = otp_generator.generate(4, {
       digits: true,
@@ -259,10 +259,10 @@ router.post("/forgetgetotp", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        return res.send("Error in sending email");
+        return res.status(500).send("Error in sending email");
       } else {
         console.log("Email sent: " + info.response);
-        return res.send("Check your email for the verification code");
+        return res.status(200).send("Check your email for the verification code in spam or inbox");
       }
     });
     const timeID = setTimeout(() => {
@@ -271,7 +271,7 @@ router.post("/forgetgetotp", async (req, res) => {
     clearTimeout(timeID);
   } catch (error) {
     console.log("error :" + error.message);
-    return res.send({ message: "Internal server error" });
+    return res.status(500).send({ message: "Internal server error" });
   }
 });
 
@@ -285,15 +285,15 @@ router.post("/otpverify", async (req, res) => {
     console.log(otp);
 
     if (!otp) {
-      return res.send({ message: "otp expired" });
+      return res.status(422).send({ message: "otp expired" });
     } else if (otp.code == code && otp.exptime > Date.now()) {
-      return res.send({ message: "otp verified", verifyotp: otp.code });
+      return res.status(200).send({ message: "otp verified", verifyotp: otp.code });
     } else if (otp.code != code) {
-      return res.send({ message: "invalid otp" });
+      return res.status(422).send({ message: "invalid otp" });
     }
   } catch (error) {
     console.log(error.message);
-    return res.send({ message: "internal server error" });
+    return res.status(500).send({ message: "internal server error" });
   }
 });
 
@@ -308,14 +308,14 @@ router.post("/register", async (req, res) => {
     });
     const { error, value } = schema.validate(req.body);
     if (error) {
-      return res.send("invalid data");
+      return res.status(422).send("invalid data");
     }
     const alreadyAdmin = await adminModel.findOne({ email: value.email });
     if (alreadyAdmin) {
-      return res.json({ message: "Admin is already registered" });
+      return res.status(409).json({ message: "Admin is already registered" });
     }
     if (value.verifyotp != verificationCodes.get(value.email)?.code) {
-      return res.send({ message: "not verified" });
+      return res.status(401).send({ message: "not verified" });
     }
     const { email, password } = value;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -326,7 +326,7 @@ router.post("/register", async (req, res) => {
     const accessToken = generrateAccessToken(userid);
     const refreshToken = generateRefreshToken(userid);
     verificationCodes.delete(email);
-    return res.send({
+    return res.status(200).send({
       message: "User registered successfully",
       accessToken: accessToken,
       refreshToken: refreshToken,
@@ -344,25 +344,25 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
       console.log("all feilds required");
-      return res.send({ message: "all fields required" });
+      return res.status(400).send({ message: "all fields required" });
     }
     const admin = await adminModel.findOne({ email: email });
     if (!admin) {
-      return res.send({ message: "admin not found" });
+      return res.status(401).send({ message: "admin not found" });
     }
     const hashpass = admin.password;
     bcrypt.compare(password, hashpass, (err, result) => {
       if (err) {
-        return res.send({ message: "Hashing error" });
+        return res.status(500).send({ message: "Hashing error" });
       }
       if (!result) {
-        return res.send({ message: "password wrong" });
+        return res.status(401).send({ message: "password wrong" });
       }
       if (result) {
         const userid = { id: admin.id };
         const accessToken = generrateAccessToken(userid);
         const refreshToken = generateRefreshToken(userid);
-        return res.send({
+        return res.status(200).send({
           message: "login sucessful",
           accessToken: accessToken,
           refreshToken: refreshToken,
@@ -371,7 +371,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.log("error :" + error.message);
-    return res.send({ message: "Internal server error" });
+    return res.status(500).send({ message: "Internal server error" });
   }
 });
 
@@ -381,18 +381,18 @@ router.post("/changepassword", async (req, res) => {
   try {
     const { email, newpass, verifyotp } = req.body;
     if (!email || !newpass || !verifyotp) {
-      return res.json({ Message: "Missing details" });
+      return res.status(400).json({ Message: "Missing details" });
     }
     if (verifyotp != verificationCodes?.get(email)?.code) {
-      return res.send("otp not verified");
+      return res.status(401).send("otp not verified");
     }
     const db_user = await adminModel.findOne({ email });
     if (!db_user) {
       return res.status(404).send({ message: "User not found" });
     }
-    if (verifyotp != verificationCodes?.get(email)?.code) {
-      return res.send({ message: "otp not verified" });
-    }
+    // if (verifyotp != verificationCodes?.get(email)?.code) {
+    //   return res.send({ message: "otp not verified" });
+    // }
     const hashedPassword = await bcrypt.hash(newpass, 10);
     const find = { email: email };
     const update = { password: hashedPassword };
@@ -423,18 +423,22 @@ router.post("/changepassword", async (req, res) => {
 router.post("/token", async (req, res) => {
   try {
     const oldrefreshToken = req.headers.authorization.split(" ")[1];
+    if(!oldrefreshToken)
+    {
+      res.status(401).send({message:"all deatils required"})
+    }
     jwt.verify(
       oldrefreshToken,
       process.env.REFRESH_TOKEN_SECRETKEY,
       (err, user) => {
         if (err) {
           console.log(err.message);
-          return res.send({ message: "access token is not valid" });
+          return res.status(401).send({ message: "access token is not valid" });
         }
         const userid = { id: user?.id };
         const accessToken = generrateAccessToken(userid);
         const refreshToken = generateRefreshToken(userid);
-        return res.send({
+        return res.status(200).send({
           message: "token generated",
           accessToken: accessToken,
           refreshToken: refreshToken,
@@ -443,7 +447,7 @@ router.post("/token", async (req, res) => {
     );
   } catch (error) {
     console.log("error :" + error.message);
-    return res.send({ message: "Internal server error" });
+    return res.status(500).send({ message: "Internal server error" });
   }
 });
 

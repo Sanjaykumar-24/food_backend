@@ -83,7 +83,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
   }
   const { category, item, price, _id, item_stock } = req.body;
   if (_id.length != 24) {
-    return res.send("Invalid ID");
+    return res.status(422).send("Invalid ID");
   }
   if (!category || !item) {
     return res.status(400).send("Insufficient data");
@@ -91,14 +91,14 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
 
   const result = await categoryModel.findById(_id);
   if (result === null) {
-    return res.send("category does not exist");
+    return res.status(404).send("category does not exist");
   }
   const subres = await categoryModel.findOne({
     _id,
     categorydetails: { $elemMatch: { productname: item } },
   });
   if (subres) {
-    return res.send("Item already exist");
+    return res.status(409).send("Item already exist");
   }
   console.log("REULT===", subres);
 
@@ -167,7 +167,7 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
   } catch (err) {
     console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
-      return res.send("Duplicate Category");
+      return res.status(409).send("Duplicate Category");
     }
     res.status(500).send("Category add failed");
   }
@@ -188,7 +188,7 @@ router.get("/get_categories_details/:category", async (req, res) => {
   try {
     const result = await categoryModel.find({ category: category });
     if (result.length == 0) {
-      return res.json(`Category ${category} does not exist`);
+      return res.status(409).json(`Category ${category} does not exist`);
     }
     res.json(result);
   } catch (err) {
@@ -204,9 +204,9 @@ router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
     const result = await categoryModel.deleteOne({ _id });
     console.log(result);
     if (result.deletedCount == 0) {
-      return res.send("Id is not valid");
+      return res.status(422).send("Id is not valid");
     }
-    return res.send("Successfully deleted");
+    return res.status(200).send("Successfully deleted");
   } catch (err) {
     return res.status(500).send("Failed!");
   }
@@ -222,10 +222,10 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
       { $pull: { categorydetails: { _id: item_id } } }
     );
     if (result.modifiedCount == 0) {
-      return res.send("Invalid ID");
+      return res.status(422).send("Invalid ID");
     }
     if (result.modifiedCount == 1) {
-      return res.send("Successfully deleted");
+      return res.status(200).send("Successfully deleted");
     }
     console.log(result);
   } catch (err) {
@@ -239,7 +239,7 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
 router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
-    return res.send("Insufficient Data");
+    return res.status(422).send("Insufficient Data");
   }
 
   try {
@@ -270,9 +270,9 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
       { arrayFilters: arrayFilters }
     );
     if (result.acknowledged) {
-      return res.send("Item modified Successfully");
+      return res.status(200).send("Item modified Successfully");
     } else {
-      return res.send("Data invalid");
+      return res.status(422).send("Data invalid");
     }
   } catch (err) {
     res.status(500).send("Failed");
@@ -283,14 +283,14 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
 router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
   const { _id, category } = req.body;
   if (!_id || !category) {
-    return res.send("insufficient data");
+    return res.status(422).send("insufficient data");
   }
   try {
     const result = await categoryModel.updateOne({ _id }, { category });
     if (result.acknowledged) {
-      return res.send("Update Successfull");
+      return res.status(200).send("Update Successfull");
     } else {
-      return res.send("Update Failed");
+      return res.status(500).send("Update Failed");
     }
   } catch (err) {
     res.status(500).send("err");
@@ -301,7 +301,7 @@ router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
 
 router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   const category = await categoryModel.find({}, "category");
-  res.json(category);
+  res.status(200).json(category);
 });
 
 router.get(
@@ -313,9 +313,9 @@ router.get(
     try {
       const result = await categoryModel.find({ category: category });
       if (result.length == 0) {
-        return res.json(`Category ${category} does not exist`);
+        return res.status(422).json(`Category ${category} does not exist`);
       }
-      res.json(result);
+      res.status(200).json(result);
     } catch (err) {
       res.status(500).send("Fetch Failed");
     }

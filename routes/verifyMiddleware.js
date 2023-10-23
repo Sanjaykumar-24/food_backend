@@ -18,12 +18,12 @@ const AdminverifyMiddleware = async (req, res, next) => {
         process.env.ACCESS_TOKEN_SECRETKEY,
         async (err, user) => {
           if (err) {
-            return res.send({ message: "token error" });
+            return res.status(401).send({ message: "token error" });
           }
           console.log(user);
           const isadmin = await adminModel.findById(user.id);
           console.log(user);
-          if (!isadmin) return res.send({ message: "not a admin" });
+          if (!isadmin) return res.status(401).send({ message: "not a admin" });
           req.userId = user.id;
           next();
         }
@@ -31,7 +31,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
     
   } catch (error) {
         console.log("Middleware Error: "+error.message);
-        return res.send({message:"Internal Middleware error"})
+        return res.staus(500).send({message:"Internal Middleware error"})
   }  
 };
 
@@ -49,12 +49,12 @@ const UserverifyMiddleware = async (req, res, next) => {
           process.env.ACCESS_TOKEN_SECRETKEY,
           async (err, user) => {
             if (err) {
-              return res.send({ message: "token error" });
+              return res.status(500).send({ message: "token error" });
             }
             console.log(user);
             const isuser = await userModel.findById(user.id);
             console.log(isuser);
-            if (!isuser) return res.send({ message: "not a admin" });
+            if (!isuser) return res,ststaus(401).send({ message: "not a admin" });
             req.userId = user.id;
             next();
           }
@@ -62,7 +62,7 @@ const UserverifyMiddleware = async (req, res, next) => {
         
     } catch (error) {
         console.log("Middleware Error: "+error.message);
-        return res.send({message:"Internal Middleware error"})
+        return res.status(500).send({message:"Internal Middleware error"})
     }
 };
 

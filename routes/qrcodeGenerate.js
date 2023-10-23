@@ -10,9 +10,9 @@ router.post("/qrcode",async(req,res)=>{
     const code = await qrcode.toDataURL(data)
     if(!code)
     {
-        res.send({message:"error occured"})
+        res.status(500).send({message:"error occured"})
     }
-    res.setHeader('Content-Type','image/png')
-    res.send(code)
+    res.status(200).setHeader('Content-Type','image/png')
+    res.status(200).send(code)
 })
 module.exports = router;
