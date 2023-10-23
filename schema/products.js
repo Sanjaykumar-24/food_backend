@@ -26,12 +26,11 @@ const categorySchema = new mongoose.Schema({
     unique: true,
     required: true,
   },
+  categoryImage: {
+    type: String,
+  },
   categorydetails: {
     type: [productSchema],
-  },
-  date: {
-    type: Date,
-    default: Date.now,
   },
 });
 const categoryModel = mongoose.model("Category", categorySchema);
