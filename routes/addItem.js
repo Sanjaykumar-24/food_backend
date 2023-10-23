@@ -38,11 +38,11 @@ async function authorize() {
 
 async function uploadFile(authClient, loc) {
   return new Promise(async (resolve, rejected) => {
-    console.log("Uploading", folderId[loc]);
+    console.log("---------     Uploading     ---------");
     const drive = google.drive({ version: "v3", auth: authClient });
 
     var fileMetaData = {
-      name: details[loc].name, 
+      name: details[loc].name,
       parents: [folderId[loc]],
     };
 
@@ -55,11 +55,7 @@ async function uploadFile(authClient, loc) {
         },
         fields: "id",
       });
-
-      console.log("File uploaded successfully.");
-      console.log("File ID:", file.data.id);
-      details[loc].url = "https://drive.google.com/uc?id=" + file.data.id; 
-
+      details[loc].url = "https://drive.google.com/uc?id=" + file.data.id;
       await drive.permissions.create({
         fileId: file.data.id,
         requestBody: {
@@ -74,7 +70,7 @@ async function uploadFile(authClient, loc) {
       });
 
       const imageUrl = result.data.webViewLink;
-      console.log("Image URL:", imageUrl);
+      console.log("---------     Image URL:", imageUrl);
       resolve(file);
     } catch (error) {
       rejected(error);
@@ -84,7 +80,8 @@ async function uploadFile(authClient, loc) {
 
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
-router.post("/add_item", AdminverifyMiddleware,async (req, res) => {
+router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
+  console.log("---------   Adding Item   ---------");
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
@@ -107,20 +104,17 @@ router.post("/add_item", AdminverifyMiddleware,async (req, res) => {
   if (subres) {
     return res.status(409).send("Item already exist");
   }
-  console.log("REULT===", subres);
 
   item_details.category = category;
   item_details.name = item;
   item_details.price = price;
   item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
-  console.log("Destructure finished");
 
   try {
     const imageBuffer = await sharp(uploadedImage.data)
       .toFormat("jpg")
       .toBuffer();
-    console.log("conversion finished");
 
     fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
       if (err) {
@@ -128,14 +122,12 @@ router.post("/add_item", AdminverifyMiddleware,async (req, res) => {
       }
     });
 
-    console.log("File write success");
+    console.log("---------     File write success     --------");
 
     const authClient = await authorize();
-    console.log("Authenticated");
 
     await uploadFile(authClient, 1);
-    console.log("Item Details===>", item_details);
-    const result = await categoryModel.updateOne(
+    await categoryModel.updateOne(
       { _id },
       {
         $push: {
@@ -148,7 +140,6 @@ router.post("/add_item", AdminverifyMiddleware,async (req, res) => {
         },
       }
     );
-    console.log("Respone", result);
     return res.status(200).send("Item added successfully");
   } catch (err) {
     return res.status(500).send(`Error adding item ${err}`);
@@ -157,14 +148,13 @@ router.post("/add_item", AdminverifyMiddleware,async (req, res) => {
 
 //! POST method to add an category to the collection with (categoryname) empty item details wil be created with the category given
 
-router.post("/add_category", AdminverifyMiddleware,async (req, res) => {
+router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
+  console.log("--------     Adding Category     ---------");
   const { addCategory } = req.body;
   const uploadImage = req?.files?.image;
-
   if (!addCategory) {
     return res.status(404).send("Category not found");
   }
-
   try {
     category_details.name = addCategory;
     const add = new categoryModel({
@@ -172,6 +162,7 @@ router.post("/add_category", AdminverifyMiddleware,async (req, res) => {
     });
     const status = await add.save();
     try {
+      console.log("---------     Converting Image     ---------");
       if (uploadImage) {
         const imageBuffer = await sharp(uploadImage.data)
           .toFormat("jpg")
@@ -191,7 +182,6 @@ router.post("/add_category", AdminverifyMiddleware,async (req, res) => {
     } catch (err) {
       console.log("Image Upload Failed");
     }
-    console.log(status);
     res.status(200).send(`Category added ${status._id}`);
   } catch (err) {
     console.log(err);
@@ -205,6 +195,7 @@ router.post("/add_category", AdminverifyMiddleware,async (req, res) => {
 //! GET method to get all the categories in the DB
 
 router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
+  console.log("---------     Getting Categories     ---------");
   const category = await categoryModel.find({}, "category");
   res.json(category);
 });
@@ -212,7 +203,7 @@ router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
 //! GET method to get the specified category details(category name) returns all the items in the given category
 
 router.get("/get_categories_details/:category", async (req, res) => {
-  console.log(req.params);
+  console.log("---------     Getting Item details In a Category     ---------");
   const { category } = req.params;
   try {
     const result = await categoryModel.find({ category: category });
@@ -228,10 +219,10 @@ router.get("/get_categories_details/:category", async (req, res) => {
 //! DELETE method to remove a given category (category _id)
 
 router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
+  console.log("---------     Removing Category     ---------");
   const { _id } = req.body;
   try {
     const result = await categoryModel.deleteOne({ _id });
-    console.log(result);
     if (result.deletedCount == 0) {
       return res.status(422).send("Id is not valid");
     }
@@ -244,6 +235,7 @@ router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
 //! DELETE method to remove an item in a specified Category (category _id, item _id)
 
 router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
+  console.log("---------     Removing Item     ---------");
   const { category_id, item_id } = req.body;
   try {
     const result = await categoryModel.updateOne(
@@ -256,7 +248,6 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
     if (result.modifiedCount == 1) {
       return res.status(200).send("Successfully deleted");
     }
-    console.log(result);
   } catch (err) {
     res.status(500).send("err");
     console.log(`err ${err}`);
@@ -266,6 +257,7 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
 //! PATCH method to update an item in the specified category (category _id ,item _id, update *fields*)
 
 router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
+  console.log("---------     Updating Item     ---------");
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
     return res.status(422).send("Insufficient Data");
@@ -310,6 +302,7 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
 });
 
 router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
+  console.log("---------     Updating Category     ---------");
   const { _id, category } = req.body;
   if (!_id || !category) {
     return res.status(422).send("insufficient data");
@@ -329,6 +322,9 @@ router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
 //!  user routes
 
 router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
+  console.log(
+    "---------  USER   ---------     Getting Categories     ---------"
+  );
   const category = await categoryModel.find({}, "category");
   res.status(200).json(category);
 });
@@ -337,7 +333,9 @@ router.get(
   "/user/get_categories_details/:category",
   UserverifyMiddleware,
   async (req, res) => {
-    console.log(req.params);
+    console.log(
+      "---------    USER   ---------     Getting All item in a Category     ---------"
+    );
     const { category } = req.params;
     try {
       const result = await categoryModel.find({ category: category });
