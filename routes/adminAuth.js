@@ -8,6 +8,7 @@ const smtpTransport = require("nodemailer-smtp-transport");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const login_model = require("../schema/logindetails");
+const { AdminverifyMiddleware } = require("./verifyMiddleware");
 const verificationCodes = new Map();
 
 const OTP = () => {
@@ -470,5 +471,34 @@ router.post("/token", async (req, res) => {
     return res.status(500).send({ message: "Internal server error" });
   }
 });
+
+router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
+
+  try {
+    const userId = req.userId;
+    const Admindetails = await adminModel.findById(userId);
+    const {email} = Admindetails.email;
+    const deletedAdmin = await login_model.findOneAndRemove({ email })
+    if(!deletedAdmin)
+    {
+      console.log("logout failed");
+      return res.status(500).send({message:"Logout Failed"})
+    }
+    return res.status(200).send({message:"Logout successfull"})
+    
+  } catch (error) {
+    console.log("error: " + error.message);
+    return res.send({message:"Internal server error"})
+  }
+})
+
+
+
+
+
+
+
+
+
 
 module.exports = router;
