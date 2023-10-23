@@ -99,6 +99,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     const add = new UserOrderModel({
       userId: userId,
       orders: orderHistory,
+      totalPrice:amount,
       date: Date.now(),
     });
 
@@ -203,6 +204,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       admin: adminMail.email,
       userId: rollno,
       orders: orderHistory,
+      totalPrice:amount,
       date: Date.now(),
     });
 
