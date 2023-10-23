@@ -7,8 +7,8 @@ const nodemailer = require("nodemailer");
 const smtpTransport = require("nodemailer-smtp-transport");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const login_model = require("../schema/logindetails");
 const { AdminverifyMiddleware } = require("./verifyMiddleware");
+const loginModel = require("../schema/Adminlogindetails");
 const verificationCodes = new Map();
 
 const OTP = () => {
@@ -348,31 +348,13 @@ router.post("/login", async (req, res) => {
       console.log("all feilds required");
       return res.status(400).send({ message: "all fields required" });
     }
-    const userdetails = await login_model.findOne({ email }); // Use findOne to find a single document
-
-if (userdetails) { // Check if a document with the given email exists
-    if (userdetails.isLogged) {
-        return res.status(401).send({ message: "This account is already in use" });
-    } else {
-        userdetails.email = email; 
-        userdetails.isLogged = true; 
-
-        await userdetails.save(); 
-    }
-} else {
-    const newUser = new login_model({
-        email: email,
-        isLogged: true
-    });
-    await newUser.save();
-}
-
+    
     const admin = await adminModel.findOne({ email: email });
     if (!admin) {
       return res.status(401).send({ message: "admin not found" });
     }
     const hashpass = admin.password;
-    bcrypt.compare(password, hashpass, (err, result) => {
+    bcrypt.compare(password, hashpass, async (err, result) => {
       if (err) {
         return res.status(500).send({ message: "Hashing error" });
       }
@@ -383,6 +365,24 @@ if (userdetails) { // Check if a document with the given email exists
         const userid = { id: admin.id };
         const accessToken = generrateAccessToken(userid);
         const refreshToken = generateRefreshToken(userid);
+        const admindetails = await loginModel.findOne({ email }); 
+    
+        if (admindetails) { 
+            if (admindetails.isLogged) {
+                return res.status(401).send({ message: "This account is already in use" });
+            } else {
+                admindetails.email = email; 
+                admindetails.isLogged = true; 
+    
+                await admindetails.save(); 
+            }
+        } else {
+            const newUser = new loginModel({
+                email: email,
+                isLogged: true
+            });
+            await newUser.save();
+        }
         return res.status(200).send({
           message: "login sucessful",
           accessToken: accessToken,
@@ -478,11 +478,11 @@ router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
     const userId = req.userId;
     const Admindetails = await adminModel.findById(userId);
     const {email} = Admindetails.email;
-    const deletedAdmin = await login_model.findOneAndRemove( email )
+    const deletedAdmin = await loginModel.findOneAndRemove( email )
     console.log(deletedAdmin)
     if(!deletedAdmin)
     {
-      console.log("logout failed");
+      console.log("No user logged in");
       return res.status(500).send({message:"Logout Failed"})
     }
     return res.status(200).send({message:"Logout successfull"})
