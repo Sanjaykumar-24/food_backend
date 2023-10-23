@@ -11,12 +11,19 @@ const {
   UserverifyMiddleware,
 } = require("./verifyMiddleware");
 const item_details = {};
+const category_details = {};
+const details = [];
+details.push(category_details);
+details.push(item_details);
+
+const folderId = [
+  "1u8dCyFRdl-rMAdSYiV0MFwm1r3bBf5y-",
+  "1jydbPP0jEN1sa0srHy3j9vVxPrrr_CnU",
+];
 
 //! Function to authorize, to upload the image to drive
 
 async function authorize() {
-  console.log("Authorizing", process.env.CLIENT_EMAIL);
-  console.log("Key", process.env.PRIVATE_KEY);
   const jwtClient = await new google.auth.JWT(
     process.env.CLIENT_EMAIL,
     null,
@@ -29,14 +36,14 @@ async function authorize() {
 
 //! Function to upload the image to google drive and retrive the URL
 
-async function uploadFile(authClient) {
+async function uploadFile(authClient, loc) {
   return new Promise(async (resolve, rejected) => {
-    console.log("Uploading");
+    console.log("Uploading", folderId[loc]);
     const drive = google.drive({ version: "v3", auth: authClient });
 
     var fileMetaData = {
-      name: item_details.item,
-      parents: ["1jydbPP0jEN1sa0srHy3j9vVxPrrr_CnU"],
+      name: details[loc].name, 
+      parents: [folderId[loc]],
     };
 
     try {
@@ -51,7 +58,7 @@ async function uploadFile(authClient) {
 
       console.log("File uploaded successfully.");
       console.log("File ID:", file.data.id);
-      item_details.url = "https://drive.google.com/uc?id=" + file.data.id;
+      details[loc].url = "https://drive.google.com/uc?id=" + file.data.id; 
 
       await drive.permissions.create({
         fileId: file.data.id,
@@ -77,7 +84,7 @@ async function uploadFile(authClient) {
 
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
-router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
+router.post("/add_item", AdminverifyMiddleware,async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
@@ -103,7 +110,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
   console.log("REULT===", subres);
 
   item_details.category = category;
-  item_details.item = item;
+  item_details.name = item;
   item_details.price = price;
   item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
@@ -126,14 +133,14 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
     const authClient = await authorize();
     console.log("Authenticated");
 
-    await uploadFile(authClient);
+    await uploadFile(authClient, 1);
     console.log("Item Details===>", item_details);
     const result = await categoryModel.updateOne(
       { _id },
       {
         $push: {
           categorydetails: {
-            productname: item_details.item,
+            productname: item_details.name,
             productprice: item_details.price,
             productstock: item_details.item_stock,
             productimage: item_details.url,
@@ -150,18 +157,40 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
 
 //! POST method to add an category to the collection with (categoryname) empty item details wil be created with the category given
 
-router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
+router.post("/add_category", AdminverifyMiddleware,async (req, res) => {
   const { addCategory } = req.body;
+  const uploadImage = req?.files?.image;
 
   if (!addCategory) {
     return res.status(404).send("Category not found");
   }
 
   try {
+    category_details.name = addCategory;
     const add = new categoryModel({
       category: addCategory,
     });
     const status = await add.save();
+    try {
+      if (uploadImage) {
+        const imageBuffer = await sharp(uploadImage.data)
+          .toFormat("jpg")
+          .toBuffer();
+        fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
+          if (err) {
+            console.log("Err while converting buffer");
+          }
+        });
+        const authClient = await authorize();
+        await uploadFile(authClient, 0);
+        await categoryModel.updateOne(
+          { _id: status._id },
+          { categoryImage: category_details.url }
+        );
+      }
+    } catch (err) {
+      console.log("Image Upload Failed");
+    }
     console.log(status);
     res.status(200).send(`Category added ${status._id}`);
   } catch (err) {
