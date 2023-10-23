@@ -1,14 +1,16 @@
-const { boolean } = require('joi');
 const mongoose = require('mongoose');
-const loginschema = new mongoose.schema({
-    email:{
-        type:String,
-        required:true
+
+const loginSchema = new mongoose.Schema({
+    email: {
+        type: String,
+        required: true
     },
-    islogged:{
-        type:boolean,
-        default:false
+    isLogged: { 
+        type: Boolean, 
+        default: false
     }
-})
-const login_model = mongoose.model('login_details',loginschema);
-module.exports =  login_model;
+});
+
+const loginModel = mongoose.model('login_details', loginSchema); // Change to "loginSchema" with a capital "S"
+
+module.exports = loginModel;

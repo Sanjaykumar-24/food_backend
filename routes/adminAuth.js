@@ -348,16 +348,16 @@ router.post("/login", async (req, res) => {
       return res.status(400).send({ message: "all fields required" });
     }
     const userdetails= await login_model.find({email});
-    if(userdetails?.islogged)
+    if(userdetails?.isLogged)
     {
       return res.status(401).send({message:"this account is already in use"});
     }
     else
     {
-      userdetails.email=email
-      if(!userdetails.islogged)
+      userdetails?.email=email
+      if(!userdetails.islLogged)
       {
-        userdetails.islogged=true;
+        userdetails.isLogged=true;
         userdetails.save();
       }
       else{
