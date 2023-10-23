@@ -344,7 +344,7 @@ router.get(
     );
     const { category } = req.params;
     try {
-      const result = await categoryModel.find({ category: category });
+      const result = await categoryModel.find({ category: category },'-categoryImage');
       if (result.length == 0) {
         return res.status(422).json(`Category ${category} does not exist`);
       }
