@@ -78,6 +78,19 @@ async function uploadFile(authClient, loc) {
   });
 }
 
+//! Function to delete the image in drive
+
+async function deleteFile(authClient, fileId) {
+  console.log("---------     Deleting Image in drive     ---------");
+  const drive = google.drive({ version: "v3", auth: authClient });
+  try {
+    await drive.files.delete({ fileId: fileId });
+    console.log("File deleted successfully.");
+  } catch (error) {
+    console.error("Error deleting the file:", error);
+  }
+}
+
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
 router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
@@ -344,7 +357,10 @@ router.get(
     );
     const { category } = req.params;
     try {
-      const result = await categoryModel.find({ category: category },'-categoryImage');
+      const result = await categoryModel.find(
+        { category: category },
+        "-categoryImage"
+      );
       if (result.length == 0) {
         return res.status(422).json(`Category ${category} does not exist`);
       }
