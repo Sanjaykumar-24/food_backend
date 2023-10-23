@@ -478,7 +478,8 @@ router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
     const userId = req.userId;
     const Admindetails = await adminModel.findById(userId);
     const {email} = Admindetails.email;
-    const deletedAdmin = await login_model.findOneAndRemove({ email })
+    const deletedAdmin = await login_model.findOneAndRemove( email )
+    console.log(deletedAdmin)
     if(!deletedAdmin)
     {
       console.log("logout failed");
