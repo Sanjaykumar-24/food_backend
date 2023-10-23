@@ -31,7 +31,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
     
   } catch (error) {
         console.log("Middleware Error: "+error.message);
-        return res.staus(500).send({message:"Internal Middleware error"})
+        return res.status(500).send({message:"Internal Middleware error"})
   }  
 };
 

@@ -10,7 +10,7 @@ const AdminOrder = require("../schema/adminOrder");
 const adminModel = require("../schema/admin");
 const router = express.Router();
 
-router.post("/user",UserverifyMiddleware, async (req, res) => {
+router.post("/user", UserverifyMiddleware, async (req, res) => {
   const userId = req.userId;
   const { orders, totalPrice } = req.body;
 
@@ -48,7 +48,9 @@ router.post("/user",UserverifyMiddleware, async (req, res) => {
       }
       amount += result[0].categorydetails[0].productprice * order.quantity;
       if (userBal < amount) {
-        return res.status(422).json({ message: "Insufficient balance while billing" });
+        return res
+          .status(422)
+          .json({ message: "Insufficient balance while billing" });
       }
 
       const orderList = {};
