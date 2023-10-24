@@ -1,5 +1,5 @@
 const express = require("express");
-const pdfDocument = require('pdfkit')
+const pdfdocument = require('pdfkit')
 const otp_generator = require("otp-generator");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
@@ -9,13 +9,8 @@ const smtpTransport = require("nodemailer-smtp-transport");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const { AdminverifyMiddleware } = require("./verifyMiddleware");
-<<<<<<< HEAD
-const { route } = require("./transaction");
-=======
 const loginModel = require("../schema/Adminlogindetails");
->>>>>>> 37551c90cc83ce17b78c4d9274c864bdc183935b
 const verificationCodes = new Map();
-
 const OTP = () => {
   const otp = otp_generator.generate(6, {
     upperCaseAlphabets: true,
@@ -504,7 +499,7 @@ router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
 router.post('/bill',async(req,res)=>{
    const {orderId} = req.body;
    const item = []
-    const pdfDocument = new pdfDocument()
+    const pdfdocument = new pdfdocument()
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'inline; filename=bill.pdf');
     pdfdocument.pipe(res);
