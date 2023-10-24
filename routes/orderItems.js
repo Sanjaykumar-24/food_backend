@@ -108,8 +108,8 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     console.log(status);
     res.json({ userOrders, totalamount: amount });
   } catch (err) {
-    console.log("error billing :"+error.message);
-    return res.status(500).send({ message: "internal server error =====>" + error.message});
+    console.log("error billing :"+err.message);
+    return res.status(500).send({ message: "internal server error =====>" + err.message});
   }
 });
 
