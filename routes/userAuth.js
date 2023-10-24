@@ -137,7 +137,7 @@ router.post("/registergetotp",async(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.status(500).send({message:"Internal server error"})
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
@@ -248,7 +248,7 @@ router.post("/forgetgetotp",async(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.status(500).send({message:"Internal server error"})
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
@@ -278,14 +278,15 @@ router.post("/otpverify",async(req,res)=>
     }
     catch(error)
     {
-       console.log(error.message)
-       return  res.status(500).send({message:"internal server error"})
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
 /*register route here*/
 
 router.post("/register",async(req,res)=>{
+    try{ 
    const joischema = joi.object(
     {
         password:joi.string().min(6).required(),
@@ -310,7 +311,7 @@ router.post("/register",async(req,res)=>{
       {
           return  res.status(401).send({message:"not verified"})
       }
-     try{
+     
         const hashedpassword = await bcrypt.hash(value.password,10);
         if(!hashedpassword)
         {
@@ -324,8 +325,8 @@ router.post("/register",async(req,res)=>{
       otpmap.delete(value.email)
       return res.status(200).json({message:"user registered sucessfully",accessToken:accessToken,refreshToken:refreshToken})
     } catch (error) {
-      console.error(error);
-      return res.status(500).send({ message: "Internal server Error" });
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
@@ -387,8 +388,8 @@ router.post("/login",async(req,res)=>{
         })
         
     } catch (error) {
-        console.error("error: "+ error.message);
-      return res.status(500).send({ message: "Internal server error" });
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 
 })
@@ -445,7 +446,7 @@ router.post("/token",(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.status(500).send({message:"Internal server error"})
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
@@ -465,8 +466,8 @@ router.post('/logout',UserverifyMiddleware,async(req,res)=>{
       return res.status(200).send({message:"Logout successfull"})
       
     } catch (error) {
-      console.log("error: " + error.message);
-      return res.send({message:"Internal server error"})
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
   })
   

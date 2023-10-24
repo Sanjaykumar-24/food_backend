@@ -11,13 +11,14 @@ const adminModel = require("../schema/admin");
 const router = express.Router();
 
 router.post("/user", UserverifyMiddleware, async (req, res) => {
+  try {
   const userId = req.userId;
   const { orders, totalPrice } = req.body;
 
   if (!orders || !totalPrice || totalPrice <= 0) {
     return res.status(422).json({ message: "Invalid details" });
   }
-  try {
+  
     let amount = 0;
 
     const userBal = await userModel.findById(userId, "amount");
@@ -107,19 +108,20 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     console.log(status);
     res.json({ userOrders, totalamount: amount });
   } catch (err) {
-    console.log(err);
-    return res.status(500).send("err while billing");
+    console.log("error billing :"+error.message);
+    return res.status(500).send({ message: "internal server error =====>" + error.message});
   }
 });
 
 router.post("/admin", AdminverifyMiddleware, async (req, res) => {
+  try {
   const userId = req.userId;
   const { orders, totalPrice, rollno } = req.body;
 
   if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
     return res.status(422).json({ message: "Invalid details" });
   }
-  try {
+  
     let amount = 0;
 
     const userBal = await userModel.findOne({ rollno }, "amount");
@@ -212,8 +214,8 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     console.log(status);
     res.json({ userOrders, totalamount: amount });
   } catch (err) {
-    console.log(err);
-    return res.status(500).send("err while billing");
+    console.log("error :"+err.message);
+    return res.status(500).send({ message: "internal server error =====>" + err.message});
   }
 });
 

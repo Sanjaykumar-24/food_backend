@@ -12,12 +12,13 @@ const transferModel = require("../schema/transerAmount");
 /**recharge route here */
 
 router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
+  try {
   const { rollno, rechargeamount } = req.body;
   if (!rollno || !rechargeamount) {
     return res.status(422).send({ message: "all field required" });
   }
   const userId = req.userId;
-  try {
+  
     const admin = await adminModel.findById(userId);
     console.log(admin);
     const details = {
@@ -53,8 +54,8 @@ router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
       return res.status(400).send({ message: "recharge failed" });
     }
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.log("error :"+err.message);
+    return res.status(500).send({ message: "internal server error =====>" + err.message});
   }
 });
 
@@ -109,8 +110,8 @@ router.post("/amountTransfer", UserverifyMiddleware, async (req, res) => {
     console.log("money transferred");
     return res.status(200).send({ message: "Money transferred", sender: sender, receiver });
   } catch (error) {
-    console.log("error: " + error.message);
-    res.status(500).send({ message: "Internal Server Error" });
+    console.log("error :"+error.message);
+    return res.status(500).send({ message: "internal server error =====>" + error.message});
   }
 });
 

@@ -156,7 +156,7 @@ router.post("/registergetotp", async (req, res) => {
     clearTimeout(timeID);
   } catch (error) {
     console.log("error :" + error.message);
-    return res.status(500).send({ message: "Internal server error" });
+    return res.status(500).send({ message: "Internal server error :"+ error.message});
   }
 });
 
@@ -294,8 +294,8 @@ router.post("/otpverify", async (req, res) => {
       return res.status(422).send({ message: "invalid otp" });
     }
   } catch (error) {
-    console.log(error.message);
-    return res.status(500).send({ message: "internal server error" });
+    console.log("error :"+error.message);
+    return res.status(500).send({ message: "internal server error =====>" + error.message});
   }
 });
 
@@ -391,8 +391,8 @@ router.post("/login", async (req, res) => {
       }
     });
   } catch (error) {
-    console.log("error :" + error.message);
-    return res.status(500).send({ message: "Internal server error" });
+    console.log("error :"+error.message);
+    return res.status(500).send({ message: "internal server error =====>" + error.message});
   }
 });
 
@@ -434,8 +434,8 @@ router.post("/changepassword", async (req, res) => {
       return res.status(404).send({ message: "Empty is not allowed" });
     }
   } catch (err) {
-    console.log(err.message);
-    return res.status(404).send({ message: "Password not changed" });
+    console.log("error :"+err.message);
+    return res.status(500).send({ message: "internal server error =====>" + err.message});
   }
 });
 
@@ -488,8 +488,8 @@ router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
     return res.status(200).send({message:"Logout successfull"})
     
   } catch (error) {
-    console.log("error: " + error.message);
-    return res.send({message:"Internal server error"})
+    console.log("error :"+error.message);
+    return res.status(500).send({ message: "internal server error =====>" + error.message});
   }
 })
 

@@ -94,6 +94,7 @@ async function deleteFile(authClient, fileId) {
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
 router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
+  try {
   console.log("---------   Adding Item   ---------");
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
@@ -124,7 +125,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
   item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
 
-  try {
+  
     const imageBuffer = await sharp(uploadedImage.data)
       .toFormat("jpg")
       .toBuffer();
@@ -155,7 +156,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
     );
     return res.status(200).send("Item added successfully");
   } catch (err) {
-    return res.status(500).send(`Error adding item ${err}`);
+    return res.status(500).send(`Internal server error ${err}`);
   }
 });
 
