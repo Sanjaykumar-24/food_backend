@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const moment = require('moment-timezone');
 const {
   AdminverifyMiddleware,
   UserverifyMiddleware,
@@ -17,7 +18,11 @@ router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
   if (!rollno || !rechargeamount) {
     return res.status(422).send({ message: "all field required" });
   }
-  const userId = req.userId;
+      const userId = req.userId;
+      const user = await userModel.findOne({ rollno });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
   
     const admin = await adminModel.findById(userId);
     console.log(admin);
@@ -25,7 +30,7 @@ router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
       admin: admin.email,
       rollno: rollno,
       amount: rechargeamount,
-      date: new Date(),
+      date: () => moment().tz('Asia/Kolkata'),
     };
     console.log(details);
     const updatedTransaction = await transactionModel.findOne({});
@@ -41,10 +46,7 @@ router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
 
     console.log("Transaction updated:", isupdated);
     if (isupdated) {
-      const user = await userModel.findOne({ rollno });
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
+      
       const numericRechargeAmount = Number(rechargeamount);
       user.amount += numericRechargeAmount;
       await user.save();
