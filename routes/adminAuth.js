@@ -1,4 +1,5 @@
 const express = require("express");
+const pdfDocument = require('pdfkit')
 const otp_generator = require("otp-generator");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
@@ -9,6 +10,7 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const login_model = require("../schema/logindetails");
 const { AdminverifyMiddleware } = require("./verifyMiddleware");
+const { route } = require("./transaction");
 const verificationCodes = new Map();
 
 const OTP = () => {
@@ -411,9 +413,7 @@ router.post("/changepassword", async (req, res) => {
     if (!db_user) {
       return res.status(404).send({ message: "User not found" });
     }
-    // if (verifyotp != verificationCodes?.get(email)?.code) {
-    //   return res.send({ message: "otp not verified" });
-    // }
+  
     const hashedPassword = await bcrypt.hash(newpass, 10);
     const find = { email: email };
     const update = { password: hashedPassword };
@@ -472,6 +472,9 @@ router.post("/token", async (req, res) => {
   }
 });
 
+/**logout route here */
+
+
 router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
 
   try {
@@ -492,13 +495,48 @@ router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
   }
 })
 
+/**billing route here */
 
+router.post('/bill',async(req,res)=>{
+   const {orderId} = req.body;
+   const item = []
+    const pdfDocument = new pdfDocument()
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename=bill.pdf');
+    pdfdocument.pipe(res);
+  pdfdocument.font('Helvetica-Bold');
+  pdfdocument.fontSize(14);
+  pdfdocument.text(new Date().toString().slice(0,10),60,50)
+  pdfdocument.fontSize(20)
+  pdfdocument.text("SmartBilling",250,50)
+  pdfdocument.fontSize(16)
+  pdfdocument.text("rollno",490,50)
+  pdfdocument.moveDown(1)
 
+  const top = 150
+  pdfdocument.fontSize(15);
+  pdfdocument.text("s.no", 80, top);
+  pdfdocument.text("product", 200, top);
+  pdfdocument.text("quantity", 340, top);
+  pdfdocument.text("price", 500, top);
+  pdfdocument.font('Helvetica');
+ 
+  pdfdocument.fontSize(12);
+  let y = 200;
+  for (const item of items) {
+    pdfdocument.text(item.serial.toString(), 80, y);
+    pdfdocument.text(item.product, 200, y);
+    pdfdocument.text(item.quantity.toString(), 360, y);
+    pdfdocument.text(item.price.toFixed(2), 500, y);
+    y += 30; 
+  }
 
+  pdfdocument.fontSize(15);
+  pdfdocument.font('Helvetica-Bold');
+  pdfdocument.text(`total: ${80}`,480,y+10);
 
-
-
-
+  pdfdocument.end();
+})
 
 
 module.exports = router;

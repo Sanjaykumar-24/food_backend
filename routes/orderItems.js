@@ -4,13 +4,15 @@ const categoryModel = require("../schema/products");
 const UserOrderModel = require("../schema/userOrder");
 const {
   UserverifyMiddleware,
-  AdminverifyMiddleware,
-} = require("../routes/verifyMiddleware");
+  AdminverifyMiddleware} = require("../routes/verifyMiddleware");
 const AdminOrder = require("../schema/adminOrder");
 const adminModel = require("../schema/admin");
 const router = express.Router();
 
+/**user order route here */
+
 router.post("/user", UserverifyMiddleware, async (req, res) => {
+
   const userId = req.userId;
   const { orders, totalPrice } = req.body;
 
@@ -29,7 +31,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     const orderHistory = [];
 
     for (const order of orders) {
-      console.log(order.category_id, "    ", order.item_id);
+      console.log(order.category_id,"    ", order.item_id);
 
       const result = await categoryModel.find(
         {
@@ -110,6 +112,22 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     return res.status(500).send("err while billing");
   }
 });
+
+/**qr code route here */
+
+router.post("/qrcode",async(req,res)=>{
+  const {orderId} = req.body
+  const data = JSON.stringify(orderId)
+  const code = await qrcode.toDataURL(data)
+  if(!code)
+  {
+      res.status(500).send({message:"error occured"})
+  }
+  res.status(200).setHeader('Content-Type','image/png')
+  res.status(200).send(code)
+})
+
+/**admin order here */
 
 router.post("/admin", AdminverifyMiddleware, async (req, res) => {
   try {
