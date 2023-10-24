@@ -5,27 +5,16 @@ const categoryModel = require("../schema/products");
 const UserOrderModel = require("../schema/userOrder");
 const {
   UserverifyMiddleware,
-<<<<<<< HEAD
-  AdminverifyMiddleware} = require("../routes/verifyMiddleware");
-const AdminOrder = require("../schema/adminOrder");
-=======
   AdminverifyMiddleware,
 } = require("../routes/verifyMiddleware");
 const AdminOrderModel = require("../schema/adminOrder");
->>>>>>> 37551c90cc83ce17b78c4d9274c864bdc183935b
 const adminModel = require("../schema/admin");
 const router = express.Router();
 
 /**user order route here */
 
 router.post("/user", UserverifyMiddleware, async (req, res) => {
-<<<<<<< HEAD
-
-  const userId = req.userId;
-  const { orders, totalPrice } = req.body;
-=======
   const session = await mongoose.startSession();
->>>>>>> 37551c90cc83ce17b78c4d9274c864bdc183935b
 
   try {
     //! Transaction Starts Since it edits the the DB
@@ -248,130 +237,12 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     await session.commitTransaction();
     session.endSession();
   } catch (err) {
-<<<<<<< HEAD
-    console.log(err);
-    return res.status(500).send("err while billing");
-  }
-});
-
-/**qr code route here */
-
-router.post("/qrcode",async(req,res)=>{
-  const {orderId} = req.body
-  const data = JSON.stringify(orderId)
-  const code = await qrcode.toDataURL(data)
-  if(!code)
-  {
-      res.status(500).send({message:"error occured"})
-  }
-  res.status(200).setHeader('Content-Type','image/png')
-  res.status(200).send(code)
-})
-
-/**admin order here */
-
-router.post("/admin", AdminverifyMiddleware, async (req, res) => {
-  try {
-    let item = null;
-    let category = null;
-    const { orders, totalPrice, rollno } = req.body;
-    const userId = req.userId;
-    const adminDetails = await adminModel.findById(userId);
-    const userDetails = await userModel.findOne({ rollno });
-    const adminOrders = [];
-    let totalAmount = 0;
-
-    if (!adminDetails) {
-      console.log("admin not found");
-      return res.status(401).send({ message: "admin not found" });
-    }
-    if (!userDetails) {
-      console.log("user not found");
-      return res.status(401).send({ message: "user not found" });
-    }
-
-    for (const order of orders) {
-      const { category_id, item_id, quantity } = order;
-      console.log(order);
-
-      category = await categoryModel.findById(category_id);
-      if (!category) {
-        return res.status(404).json({ error: "Category not found" });
-      }
-
-      item = category.categorydetails.find((item) => item._id == item_id);
-      if (!item) {
-        return res
-          .status(404)
-          .json({ error: "Item not found in the category" });
-      }
-
-      if (Number(quantity) > Number(item.productstock)) {
-        console.log("Insufficient Quantity");
-        return res.status(400).json({ message: "Insufficient Quantity" });
-      }
-      const orderTotalPrice = item.productprice * quantity;
-      totalAmount += orderTotalPrice;
-      const admin = adminDetails.email;
-      const userId = userDetails.rollno;
-      const newOrder = new AdminOrder({
-        admin,
-        userId,
-        orders: [
-          {
-            category_id,
-            item_id,
-            quantity,
-            totalPrice: orderTotalPrice,
-            date: Date.now(),
-          },
-        ],
-      });
-      adminOrders.push(newOrder);
-      item.productstock -= quantity;
-      await item.save();
-
-      await categoryModel.findOneAndUpdate(
-        { _id: category_id, "categorydetails._id": item_id },
-        { $inc: { "categorydetails.$.productstock": -quantity } }
-      );
-    }
-    ////////////////loop over
-
-    if (Number(totalAmount) !== Number(totalPrice)) {
-      console.log("Right amount for the product is not received");
-      return res.status(400).json({ message: "Total Amount is not correct" });
-    }
-
-    if (totalAmount > Number(adminDetails.amount)) {
-      console.log("Insufficient Amount");
-      return res.status(400).json({ message: "Insufficient Amount" });
-    }
-
-    if (!adminDetails.orders) {
-      adminDetails.orders = [];
-    }
-    await AdminOrder.insertMany(adminOrders);
-
-    adminDetails.amount -= totalAmount;
-    adminDetails.orders = adminDetails.orders.concat(adminOrders);
-
-    await adminDetails.save();
-    res.status(201).json({
-      message: "Orders created successfully",
-      orders: adminOrders,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to create orders" });
-=======
     console.log("error :" + err.message);
     await session.abortTransaction();
     session.endSession();
     return res
       .status(500)
       .send({ message: "internal server error =====>" + err.message });
->>>>>>> 37551c90cc83ce17b78c4d9274c864bdc183935b
   }
 });
 
