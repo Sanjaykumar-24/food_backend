@@ -17,26 +17,143 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
   const session = await mongoose.startSession();
 
   try {
-    //! Transaction Starts Since it edits the the DB
-    session.startTransaction();
     const userId = req.userId;
     const { orders, totalPrice } = req.body;
 
     if (!orders || !totalPrice || totalPrice <= 0) {
-      session.endSession();
       return res.status(422).json({ message: "Invalid details" });
     }
 
     let amount = 0;
-
     const userBal = await userModel.findById(userId, "amount");
 
     if (userBal.amount < totalPrice) {
+      return res.status(422).json({ message: "Insufficient balance" });
+    }
+    const userOrders = [];
+    const orderHistory = [];
+
+    await session.startTransaction();
+
+    for (const order of orders) {
+      console.log(order.category_id, "    ", order.item_id);
+
+      const result = await categoryModel.find(
+        {
+          _id: order.category_id,
+          "categorydetails._id": order.item_id,
+        },
+        {
+          "categorydetails.$": 1,
+        }
+      );
+      if (!result) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.json({ Message: "Item or Category Error" });
+      }
+
+      if (result[0].categorydetails[0].productstock < order.quantity) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(503).json({
+          message: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
+        });
+      }
+      amount += result[0].categorydetails[0].productprice * order.quantity;
+      if (userBal < amount) {
+        await session.abortTransaction();
+        session.endSession();
+        return res
+          .status(422)
+          .json({ message: "Insufficient balance while billing" });
+      }
+      await categoryModel.updateOne(
+        {
+          _id: order.category_id,
+          "categorydetails._id": order.item_id,
+        },
+        {
+          $inc: { "categorydetails.$.productstock": -order.quantity },
+        },
+        { session }
+      );
+
+      const orderList = {};
+      const ordHistory = {};
+      orderList.productname = result[0].categorydetails[0].productname;
+      orderList.productprice = result[0].categorydetails[0].productprice;
+      orderList.quantity = order.quantity;
+      orderList.totalcost =
+        result[0].categorydetails[0].productprice * order.quantity;
+      userOrders.push(orderList);
+
+      ordHistory.category_id = order.category_id;
+      ordHistory.item_id = order.item_id;
+      ordHistory.quantity = order.quantity;
+      ordHistory.price =
+        result[0].categorydetails[0].productprice * order.quantity;
+      orderHistory.push(ordHistory);
+    }
+
+    if (amount != totalPrice) {
+      await session.abortTransaction();
       session.endSession();
+      return res.status(500).send({ Message: "Calculation Err!" });
+    }
+
+    await userModel.updateOne(
+      {
+        _id: userId,
+      },
+      {
+        $inc: { amount: -amount },
+      },
+      { session }
+    );
+
+    const data = await userModel.findOne({ _id: userId });
+
+    const add = new UserOrderModel({
+      userId: userId,
+      orders: orderHistory,
+      totalPrice: amount,
+    });
+
+    const status = await add.save({ session });
+    console.log(status);
+    await session.commitTransaction();
+    session.endSession();
+    res.json({ userOrders, totalamount: amount });
+  } catch (err) {
+    console.log("error billing :" + err.message);
+    await session.abortTransaction();
+    session.endSession();
+    return res
+      .status(500)
+      .send({ message: "internal server error =====>" + err.message });
+  }
+});
+
+router.post("/admin", AdminverifyMiddleware, async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    const userId = req.userId;
+    const { orders, totalPrice, rollno } = req.body;
+
+    if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
+      return res.status(422).json({ message: "Invalid details" });
+    }
+
+    let amount = 0;
+    const userBal = await userModel.findOne({ rollno }, "amount");
+
+    if (userBal.amount < totalPrice) {
       return res.status(422).json({ message: "Insufficirnt balance" });
     }
     const userOrders = [];
     const orderHistory = [];
+    await session.startTransaction();
 
     for (const order of orders) {
       console.log(order.category_id, "    ", order.item_id);
@@ -51,53 +168,24 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
         }
       );
 
-      if (result[0].categorydetails[0].productstock < order.quantity) {
+      if (!result) {
+        await session.abortTransaction();
         session.endSession();
+        return res.json({ Message: "Item or Category Error" });
+      }
+
+      if (result[0].categorydetails[0].productstock < order.quantity) {
         return res.status(503).json({
           message: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
         });
       }
       amount += result[0].categorydetails[0].productprice * order.quantity;
       if (userBal < amount) {
-        session.endSession();
         return res
           .status(422)
           .json({ message: "Insufficient balance while billing" });
       }
 
-      const orderList = {};
-      const ordHistory = {};
-      orderList.productname = result[0].categorydetails[0].productname;
-      orderList.productprice = result[0].categorydetails[0].productprice;
-      orderList.quantity = order.quantity;
-      orderList.totalcost =
-        result[0].categorydetails[0].productprice * order.quantity;
-      userOrders.push(orderList);
-
-      ordHistory.category_id = order.category_id;
-      ordHistory.item_id = order.item_id;
-      ordHistory.quantity = order.quantity;
-      ordHistory.price =
-        result[0].categorydetails[0].productprice * order.quantity;
-
-      orderHistory.push(ordHistory);
-    }
-
-    if (amount != totalPrice) {
-      session.endSession();
-      return res.status(500).send({ Message: "Calculation Err!" });
-    }
-
-    await userModel.updateOne(
-      {
-        _id: userId,
-      },
-      {
-        $inc: { amount: -amount },
-      }
-    );
-
-    for (const order of orders) {
       await categoryModel.updateOne(
         {
           _id: order.category_id,
@@ -105,77 +193,9 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
         },
         {
           $inc: { "categorydetails.$.productstock": -order.quantity },
-        }
-      );
-    }
-
-    const add = new UserOrderModel({
-      userId: userId,
-      orders: orderHistory,
-      totalPrice: amount,
-    });
-
-    const status = await add.save();
-    console.log(status);
-    res.json({ userOrders, totalamount: amount });
-    await session.commitTransaction();
-    session.endSession();
-  } catch (err) {
-    console.log("error billing :" + error.message);
-
-    await session.abortTransaction();
-    session.endSession();
-    return res
-      .status(500)
-      .send({ message: "internal server error =====>" + error.message });
-  }
-});
-
-router.post("/admin", AdminverifyMiddleware, async (req, res) => {
-  const session = await mongoose.startSession();
-  try {
-    session.startTransaction();
-    const userId = req.userId;
-    const { orders, totalPrice, rollno } = req.body;
-
-    if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
-      return res.status(422).json({ message: "Invalid details" });
-    }
-
-    let amount = 0;
-
-    const userBal = await userModel.findOne({ rollno }, "amount");
-
-    if (userBal.amount < totalPrice) {
-      return res.status(422).json({ message: "Insufficirnt balance" });
-    }
-    const userOrders = [];
-    const orderHistory = [];
-
-    for (const order of orders) {
-      console.log(order.category_id,"    ", order.item_id);
-
-      const result = await categoryModel.find(
-        {
-          _id: order.category_id,
-          "categorydetails._id": order.item_id,
         },
-        {
-          "categorydetails.$": 1,
-        }
+        { session }
       );
-
-      if (result[0].categorydetails[0].productstock < order.quantity) {
-        return res.status(503).json({
-          message: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
-        });
-      }
-      amount += result[0].categorydetails[0].productprice * order.quantity;
-      if (userBal < amount) {
-        return res
-          .status(422)
-          .json({ message: "Insufficient balance while billing" });
-      }
 
       const orderList = {};
       const ordHistory = {};
@@ -191,11 +211,12 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       ordHistory.quantity = order.quantity;
       ordHistory.price =
         result[0].categorydetails[0].productprice * order.quantity;
-
       orderHistory.push(ordHistory);
     }
 
     if (amount != totalPrice) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(500).send({ Message: "Calculation Err!" });
     }
 
@@ -205,20 +226,9 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       },
       {
         $inc: { amount: -amount },
-      }
+      },
+      { session }
     );
-
-    for (const order of orders) {
-      await categoryModel.updateOne(
-        {
-          _id: order.category_id,
-          "categorydetails._id": order.item_id,
-        },
-        {
-          $inc: { "categorydetails.$.productstock": -order.quantity },
-        }
-      );
-    }
 
     const adminMail = await adminModel.findById(userId, "email");
 
@@ -230,11 +240,11 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       date: Date.now(),
     });
 
-    const status = await add.save();
+    const status = await add.save({ session });
     console.log(status);
-    res.json({ userOrders, totalamount: amount });
     await session.commitTransaction();
     session.endSession();
+    res.json({ userOrders, totalamount: amount });
   } catch (err) {
     console.log("error :" + err.message);
     await session.abortTransaction();
