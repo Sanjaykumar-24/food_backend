@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const moment = require('moment-timezone');
+
 const {
   AdminverifyMiddleware,
   UserverifyMiddleware,
@@ -29,8 +29,7 @@ router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
     const details = {
       admin: admin.email,
       rollno: rollno,
-      amount: rechargeamount,
-      date: () => moment().tz('Asia/Kolkata'),
+      amount: rechargeamount
     };
     console.log(details);
     const updatedTransaction = await transactionModel.findOne({});
