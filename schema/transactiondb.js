@@ -1,4 +1,11 @@
 const mongoose = require('mongoose');
+function date()
+{
+    const now = new Date();
+    const options = { timeZone: 'Asia/Kolkata', hour12: false };
+    const istTime = now.toLocaleTimeString('en-IN', options);
+    return istTime;
+}
 const transactionItemSchema = new mongoose.Schema({
     admin:{
         type:String,
@@ -13,7 +20,8 @@ const transactionItemSchema = new mongoose.Schema({
         required: true
     },
     date: {
-        type: Date,
+        type: String,
+        default:date()
     },
 
 });
