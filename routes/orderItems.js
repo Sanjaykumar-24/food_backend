@@ -113,7 +113,6 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       userId: userId,
       orders: orderHistory,
       totalPrice: amount,
-      date: Date.now(),
     });
 
     const status = await add.save();
