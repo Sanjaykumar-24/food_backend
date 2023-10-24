@@ -18,7 +18,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
       process.env.ACCESS_TOKEN_SECRETKEY,
       async (err, user) => {
         if (err) {
-          return res.status(401).send({ message: "token error" });
+          return res.status(401).send({ message: "token error"+err.message });
         }
         const isadmin = await adminModel.findById(user.id);
         if (!isadmin) return res.status(401).send({ message: "not a admin" });
