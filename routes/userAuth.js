@@ -9,6 +9,9 @@ const router = express.Router()
 require('dotenv').config()
 const userModel = require('../schema/user')
 const e = require('express')
+const { UserverifyMiddleware } = require('./verifyMiddleware')
+const AdminloginModel = require('../schema/userlogindetails')
+const userloginModel = require('../schema/userlogindetails')
 const transporter = nodemailer.createTransport(
     smtpTransporter({
       service: 'Gmail',
@@ -134,7 +137,7 @@ router.post("/registergetotp",async(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.status(500).send({message:"Internal server error"})
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
@@ -245,7 +248,7 @@ router.post("/forgetgetotp",async(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.status(500).send({message:"Internal server error"})
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
@@ -275,14 +278,15 @@ router.post("/otpverify",async(req,res)=>
     }
     catch(error)
     {
-       console.log(error.message)
-       return  res.status(500).send({message:"internal server error"})
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
 /*register route here*/
 
 router.post("/register",async(req,res)=>{
+    try{ 
    const joischema = joi.object(
     {
         password:joi.string().min(6).required(),
@@ -307,7 +311,7 @@ router.post("/register",async(req,res)=>{
       {
           return  res.status(401).send({message:"not verified"})
       }
-     try{
+     
         const hashedpassword = await bcrypt.hash(value.password,10);
         if(!hashedpassword)
         {
@@ -321,8 +325,8 @@ router.post("/register",async(req,res)=>{
       otpmap.delete(value.email)
       return res.status(200).json({message:"user registered sucessfully",accessToken:accessToken,refreshToken:refreshToken})
     } catch (error) {
-      console.error(error);
-      return res.status(500).send({ message: "Internal server Error" });
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
 
@@ -346,7 +350,7 @@ router.post("/login",async(req,res)=>{
         }
         const hashpass = user.password
         const id = {id:user.id};
-         bcrypt.compare(password,hashpass,(err,result)=>{
+         bcrypt.compare(password,hashpass,async (err,result)=>{
             if(err)
             {
                 return res.status(500).send({message:"error while comparing password"})
@@ -360,13 +364,32 @@ router.post("/login",async(req,res)=>{
             {
                 const accessToken = generrateAccessToken(id);
                 const refreshToken = generateRefreshToken(id);
+                const userdetails = await userloginModel.findOne({ email }); 
+    
+                if (userdetails) { 
+                    if (userdetails.isLogged) {
+                        return res.status(401).send({ message: "This account is already in use" });
+                    } else {
+                        userdetails.email = email; 
+                        userdetails.isLogged = true; 
+
+                        await userdetails.save(); 
+                    }
+                } else {
+                    const newUser = new userloginModel({
+                        email: email,
+                        isLogged: true
+                    });
+                    await newUser.save();
+                }
+
                 return res.status(200).send({message:"password is correct",accessToken:accessToken,refreshToken:refreshToken})
             }
         })
         
     } catch (error) {
-        console.error("error: "+ error.message);
-      return res.status(500).send({ message: "Internal server error" });
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 
 })
@@ -423,8 +446,34 @@ router.post("/token",(req,res)=>{
         
     } catch (error) {
         console.log("error :"+error.message);
-        return res.status(500).send({message:"Internal server error"})
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
     }
 })
+
+router.post('/logout',UserverifyMiddleware,async(req,res)=>{
+
+    try {
+      const userId = req.userId;
+      const userdetails = await userModel.findById(userId);
+      const {email} = userdetails.email;
+      const deleteduser = await userloginModel.findOneAndRemove( email )
+      console.log(deleteduser)
+      if(!deleteduser)
+      {
+        console.log("No user logged in");
+        return res.status(500).send({message:"Logout Failed"})
+      }
+      return res.status(200).send({message:"Logout successfull"})
+      
+    } catch (error) {
+        console.log("error :"+error.message);
+        return res.status(500).send({ message: "internal server error =====>" + error.message});
+    }
+  })
+  
+
+
+
+
 
 module.exports = router;

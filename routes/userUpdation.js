@@ -24,8 +24,8 @@ router.post('/updatename',UserverifyMiddleware,async(req,res)=>{
       res.status(200).send({message:"username updated"})
       
    } catch (error) {
-      console.log("error: "+error.message);
-      return res.status(500).send({message:"Internal server error"})
+      console.log("error :"+error.message);
+      return res.status(500).send({ message: "internal server error =====>" + error.message});
    }
 })
 

@@ -36,9 +36,9 @@ router.get("/transaction",async(req,res)=>{
     const excel = await workbook.xlsx.writeBuffer()
     res.status(200).send(excel)
    }
-   catch(error)
-   {
-  res.status(500).send({message:"error"})
+   catch(error){
+    console.log("error :"+error.message);
+    return res.status(500).send({ message: "internal server error =====>" + error.message});
    }
 })
 module.exports = router

@@ -11,6 +11,6 @@ const loginSchema = new mongoose.Schema({
     }
 });
 
-const loginModel = mongoose.model('login_details', loginSchema); // Change to "loginSchema" with a capital "S"
+const userloginModel = mongoose.model('login_details_user', loginSchema); // Change to "loginSchema" with a capital "S"
 
-module.exports = loginModel;
+module.exports = userloginModel;
