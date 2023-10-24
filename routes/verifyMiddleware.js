@@ -49,7 +49,7 @@ const UserverifyMiddleware = async (req, res, next) => {
           return res.status(500).send({ message: "token error" });
         }
         const isuser = await userModel.findById(user.id);
-        if (!isuser) return res, ststaus(401).send({ message: "not a admin" });
+        if (!isuser) return res.status(401).send({ message: "not a admin" });
         req.userId = user.id;
         next();
       }
