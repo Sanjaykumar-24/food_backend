@@ -46,6 +46,52 @@ router.get("/recharge", async (req, res) => {
   try {
     let { from, to } = req.query;
 
+    if (!from || !to) {
+      return res.status(404).send("Filter not specified");
+    }
+
+    const options = {
+      timeZone: "Asia/Kolkata",
+      hour12: false,
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    };
+    const startDate = new Date(from).toLocaleString("en-IN", options);
+    const endDate = new Date(to).toLocaleString("en-IN", options);
+    console.log(startDate + "\n" + endDate);
+
+    if (startDate == "Invalid Date" || endDate == "Invalid Date") {
+      return res.send("Invalid date");
+    }
+
+    const result = await transactionModel.findOne({
+      rechargetransaction: {
+        $elemMatch: {
+          date: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+        },
+      },
+    });
+
+    if (!result) {
+      return res.send("No Transaction Found");
+    }
+
+    let matchedTransaction;
+
+    if (result) {
+      matchedTransaction = result.rechargetransaction.filter((item) => {
+        const itemDate = item.date;
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+    }
+
     let workbook = new excelJs.Workbook();
     const sheet = workbook.addWorksheet("transactionReport");
     sheet.columns = [
@@ -74,43 +120,7 @@ router.get("/recharge", async (req, res) => {
       right: { style: "none" },
     };
 
-    const options = {
-      timeZone: "Asia/Kolkata",
-      hour12: false,
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    };
-
-    const startDate = new Date(from).toLocaleString("en-IN", options);
-    const endDate = new Date(to).toLocaleString("en-IN", options);
-    console.log(startDate + "\n" + endDate);
-
-    const result = await transactionModel.findOne({
-      rechargetransaction: {
-        $elemMatch: {
-          date: {
-            $gte: startDate,
-            $lte: endDate,
-          },
-        },
-      },
-    });
-
-    let matchedTransaction;
-
-    if (result) {
-      matchedTransaction = result.rechargetransaction.filter((item) => {
-        const itemDate = item.date;
-        return itemDate >= startDate && itemDate <= endDate;
-      });
-    }
-    console.log(matchedTransaction);
     let total_amount = 0;
-
     matchedTransaction.forEach((item) => {
       total_amount += Number(item.amount);
       sheet
