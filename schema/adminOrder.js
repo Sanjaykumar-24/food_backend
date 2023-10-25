@@ -52,7 +52,7 @@ const adminOrderSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: Date.now(),
+    default: date(),
   },
 });
 const AdminOrder = mongoose.model("AdminOrder", adminOrderSchema);

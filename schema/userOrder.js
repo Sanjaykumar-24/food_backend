@@ -44,7 +44,7 @@ const userOrderSchema = new mongoose.Schema({
   },
   date: {
     type: Date,
-    default: Date.now(),
+    default: date(),
   },
 });
 
