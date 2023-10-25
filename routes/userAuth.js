@@ -42,7 +42,7 @@ router.post("/registergetotp", async (req, res) => {
     const { email } = req.body;
     const user = await userModel.findOne({ email: email });
     if (user) {
-      res.status(422).send({ message: "user with this email already exist" });
+      return res.status(422).send({ message: "user with this email already exist" });
     }
     const otpvalue = otp.generate(4, {
       digits: true,
@@ -160,7 +160,7 @@ router.post("/forgetgetotp", async (req, res) => {
     const { email } = req.body;
     const user = await userModel.findOne({ email: email });
     if (!user) {
-      res.status(401).send({ message: "user with this email not found" });
+      return res.status(401).send({ message: "user with this email not found" });
     }
     const otpvalue = otp.generate(4, {
       digits: true,
@@ -351,7 +351,7 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
       console.log("all fields required");
-      res.status(422).send({ message: "all feilds required" });
+      return res.status(422).send({ message: "all feilds required" });
     }
     const user = await userModel.findOne({ email });
     console.log(user);
