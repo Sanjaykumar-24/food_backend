@@ -2,6 +2,8 @@ const express = require("express");
 const excelJs = require("exceljs");
 const transactionModel = require("../schema/transactiondb");
 const router = express.Router();
+const UserOrderModel = require("../schema/userOrder");
+
 // router.get("/transaction",async(req,res)=>{
 //    try
 //    {
@@ -184,65 +186,102 @@ const daily_order = async () => {};
 
 router.get("/orders", async (req, res) => {
   try {
-    const query = req.query.type;
-    if (!query) {
-      return res.status(404).send("query not found");
-    }
+    // ---------------------------------------------------------------------------------------------------------------------------------------------//
+
     let workbook = new excelJs.Workbook();
-    const sheet = workbook.addWorksheet("transactionReport");
-    sheet.columns = [
+    const sheet = workbook.addWorksheet("orderReport");
+    const columns = [
+      { header: "", key: "emptyColumn", width: 10 },
       { header: "Order Type", key: "order_type", width: 25 },
       { header: "Order By", key: "order_by", width: 25 },
       { header: "Order To", key: "order_to", width: 25 },
-      { header: "Order Items", key: "order_items", width: 50 },
-      { header: "Total Amount", key: "amount", width: 25 },
-      { header: "Date", key: "date", width: 25 },
+      { header: "order Items", key: "order_items", width: 25 },
+      { header: "", key: "emptyColumn", width: 25 },
+      { header: "", key: "emptyColumn", width: 25 },
+      { header: "", key: "emptyColumn", width: 25 },
+      { header: "", key: "emptyColumn", width: 25 },
+      { header: "Amount", key: "amount", width: 25 },
+      { header: "Time", key: "time", width: 25 },
     ];
-    sheet.getCell("D1").value = "Category Name - Item Name (Qty, Price)";
+    sheet.columns = columns;
 
-    const orders = [
-      {
-        categoryName: "Category 1",
-        itemName: "Item 1",
-        quantity: 2,
-        price: 10,
-      },
-      {
-        categoryName: "Category 2",
-        itemName: "Item 2",
-        quantity: 1,
-        price: 15,
-      },
-    ];
-    const formattedOrders = orders.map(
-      (order) =>
-        `${order.categoryName} - ${order.itemName} (${order.quantity}, ${order.price})`
-    );
-    sheet.addRow({
-      order_type: "Type",
-      order_by: "User",
-      order_to: "Recipient",
-      order_items: formattedOrders.join("\n"), // Join the formatted orders with newline for each order
-      amount: 25, // Total amount for the orders
-      date: new Date(), // Date of the order
-    });
-
-    switch (query) {
-      case "daily_report":
-        res
-          .status(200)
-          .setHeader(
-            "Content-Type",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          );
-        res
-          .status(200)
-          .setHeader("Content-Disposition", `attachment; filename= Order.xlsx`);
-        const excel = await workbook.xlsx.writeBuffer();
-        res.status(200).send(excel);
+    for (let i = 2; i <= columns.length; i++) {
+      const cell = sheet.getCell(1, i); // The header row is at index 1
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        right: { style: "thin" },
+        bottom: { style: "thin" },
+      };
+      cell.alignment = { horizontal: "center" };
+      cell.font = { bold: true, size: 13 };
     }
-    console.log(query);
+
+    sheet.insertRow(1, ["", "", "", ""]);
+
+    sheet.mergeCells("B2:B3");
+    const headerCell1 = sheet.getCell("B2");
+    headerCell1.alignment = { horizontal: "center", vertical: "middle" };
+    sheet.mergeCells("C2:C3");
+    const headerCell2 = sheet.getCell("C2");
+    headerCell2.alignment = { horizontal: "center", vertical: "middle" };
+    sheet.mergeCells("D2:D3");
+    const headerCell3 = sheet.getCell("D2");
+    headerCell3.alignment = { horizontal: "center", vertical: "middle" };
+    sheet.mergeCells("E2:I2");
+    const headerCell4 = sheet.getCell("E2");
+    headerCell4.alignment = { horizontal: "center", vertical: "middle" };
+    sheet.mergeCells("J2:J3");
+    const headerCell5 = sheet.getCell("J2");
+    headerCell5.alignment = { horizontal: "center", vertical: "middle" };
+    sheet.mergeCells("K2:K3");
+    const headerCell6 = sheet.getCell("K2");
+    headerCell6.alignment = { horizontal: "center", vertical: "middle" };
+
+    sheet.getCell("E3").value = "Category";
+    sheet.getCell("F3").value = "item";
+    sheet.getCell("G3").value = "item price";
+    sheet.getCell("H3").value = "quantity";
+    sheet.getCell("I3").value = "Price";
+
+    const subheaderStyle = {
+      border: {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        right: { style: "thin" },
+        bottom: { style: "thin" },
+      },
+      alignment: { horizontal: "center" },
+      font: { bold: true, size: 10 },
+    };
+
+    sheet.getCell("E3").style = subheaderStyle;
+    sheet.getCell("F3").style = subheaderStyle;
+    sheet.getCell("G3").style = subheaderStyle;
+    sheet.getCell("H3").style = subheaderStyle;
+    sheet.getCell("I3").style = subheaderStyle;
+
+    const firstRow = sheet.getRow(2);
+    firstRow.height = 35;
+    const secondRow = sheet.getRow(3);
+    secondRow.height = 25;
+    // ---------------------------------------------------------------------------------------------------------------------------------------------//
+
+
+
+    res
+      .status(200)
+      .setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+    res
+      .status(200)
+      .setHeader("Content-Disposition", `attachment; filename= Order.xlsx`);
+    const excel = await workbook.xlsx.writeBuffer();
+    res.status(200).send(excel);
   } catch (err) {
+    console.log(err);
     res.status(500).send("Internal Server Error");
   }
 });
