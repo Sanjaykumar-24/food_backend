@@ -54,7 +54,11 @@ const userOrderSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: date(),
+<<<<<<< HEAD:schema/orders.js
   }
+=======
+  },
+>>>>>>> 444c37195de3dcd46cf3bf646b2187b0ea319a84:schema/adminOrder.js
 });
 
 const UserOrder = mongoose.model("UserOrder", userOrderSchema);
