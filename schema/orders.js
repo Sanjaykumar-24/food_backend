@@ -34,6 +34,15 @@ const orderSchema = new mongoose.Schema({
 });
 
 const userOrderSchema = new mongoose.Schema({
+  orderType: {
+    type: String,
+  },
+  orderBy: {
+    type: String,
+  },
+  orderTo:{
+    type:String
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -45,7 +54,7 @@ const userOrderSchema = new mongoose.Schema({
   date: {
     type: Date,
     default: date(),
-  },
+  }
 });
 
 const UserOrder = mongoose.model("UserOrder", userOrderSchema);

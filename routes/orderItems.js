@@ -2,12 +2,11 @@ const express = require("express");
 const mongoose = require("mongoose");
 const userModel = require("../schema/user");
 const categoryModel = require("../schema/products");
-const UserOrderModel = require("../schema/userOrder");
+const orderModel = require("../schema/order");
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
 } = require("../routes/verifyMiddleware");
-const AdminOrderModel = require("../schema/adminOrder");
 const adminModel = require("../schema/admin");
 const router = express.Router();
 
@@ -114,10 +113,13 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
 
     const data = await userModel.findOne({ _id: userId });
 
-    const add = new UserOrderModel({
+    const add = new orderModel({
       userId: userId,
       orders: orderHistory,
       totalPrice: amount,
+      date:new Date(),
+      orderType:'User',
+      orderBy:data.rollno
     });
 
     const status = await add.save({ session });
@@ -146,7 +148,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     }
 
     let amount = 0;
-    const userBal = await userModel.findOne({ rollno }, "amount");
+    const userBal = await userModel.findOne({ rollno }, "amount rollno");
 
     if (userBal.amount < totalPrice) {
       return res.status(422).json({ message: "Insufficirnt balance" });
@@ -232,12 +234,14 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
 
     const adminMail = await adminModel.findById(userId, "email");
 
-    const add = new AdminOrderModel({
-      admin: adminMail.email,
+    const add = new orderModel({
+      orderType:'Admin',
+      orderBy:adminMail.email,
+      orderTo:userBal.rollno,
       userId: rollno,
       orders: orderHistory,
       totalPrice: amount,
-      date: Date.now(),
+      date: new Date()
     });
 
     const status = await add.save({ session });
