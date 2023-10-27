@@ -119,6 +119,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       totalPrice: amount,
       date:new Date(),
       orderType:'User',
+      orderTo:data.rollno,
       orderBy:data.rollno
     });
 
