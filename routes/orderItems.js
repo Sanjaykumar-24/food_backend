@@ -2,7 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const userModel = require("../schema/user");
 const categoryModel = require("../schema/products");
-const orderModel = require("../schema/order");
+const orderModel = require("../schema/orders");
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
