@@ -24,7 +24,7 @@ const transporter = nodemailer.createTransport(
     },
   })
 );
-const date_=date()
+
 const generrateAccessToken = (user) => {
   const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETKEY, {
     expiresIn: "15m",
@@ -338,7 +338,8 @@ router.post("/register", async (req, res) => {
     const userid = { id: data.id };
     const accessToken = generrateAccessToken(userid);
     const refreshToken = generateRefreshToken(userid);
-    
+    const date_=date()
+    console.log(date);
     await tokenModel.create({ email: value.email ,
       AccessToken:accessToken,RefreshToken:refreshToken,Created_on:date_,Modified_on:date_
     }).then(()=>{
