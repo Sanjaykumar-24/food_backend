@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const userModel = require("../schema/user");
 const categoryModel = require("../schema/products");
 const orderModel = require("../schema/orders");
-
+const qrcode = require('qrcode')
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
@@ -273,5 +273,21 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       .send({ message: "internal server error =====>" + err.message });
   }
 });
+
+
+/**qrcode route here */
+
+router.post('/qrcode',async(req,res)=>{
+  const {orderId} = req.body
+  const data = JSON.stringify(orderId)
+  const code = await qrcode.toDataURL(data)
+  if(!code)
+  {
+    res.send({message:"error occured while generating qr"})
+  }
+  res.setHeader('Content-type','image/png')
+  console.log(code)
+  res.send(code)
+})
 
 module.exports = router;
