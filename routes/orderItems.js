@@ -241,7 +241,6 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       userId: rollno,
       orders: orderHistory,
       totalPrice: amount,
-      date: new Date(),
     });
 
     const status = await add.save({ session });
