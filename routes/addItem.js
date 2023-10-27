@@ -349,6 +349,7 @@ router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   res.status(200).json(category);
 });
 
+
 router.get(
   "/user/get_categories_details/:category",
   UserverifyMiddleware,

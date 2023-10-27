@@ -3,12 +3,14 @@ const mongoose = require("mongoose");
 const userModel = require("../schema/user");
 const categoryModel = require("../schema/products");
 const orderModel = require("../schema/orders");
+
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
 } = require("../routes/verifyMiddleware");
 const adminModel = require("../schema/admin");
 const router = express.Router();
+
 
 function date() {
   const now = new Date();
@@ -129,7 +131,6 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     const data = await userModel.findOne({ _id: userId });
 
     const add = new orderModel({
-      userId: userId,
       orders: orderHistory,
       totalPrice: amount,
       orderType: "User",
@@ -254,7 +255,6 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       orderType: "Admin",
       orderBy: adminMail.email,
       orderTo: userBal.rollno,
-      userId: rollno,
       orders: orderHistory,
       totalPrice: amount,
     });
