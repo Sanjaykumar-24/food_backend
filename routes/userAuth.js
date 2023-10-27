@@ -12,6 +12,9 @@ const e = require("express");
 const { UserverifyMiddleware } = require("./verifyMiddleware");
 const AdminloginModel = require("../schema/userlogindetails");
 const userloginModel = require("../schema/userlogindetails");
+const tokenModel = require("../schema/tokenschema");
+const date = require("./date");
+
 const transporter = nodemailer.createTransport(
   smtpTransporter({
     service: "Gmail",
@@ -334,6 +337,12 @@ router.post("/register", async (req, res) => {
     const userid = { id: data.id };
     const accessToken = generrateAccessToken(userid);
     const refreshToken = generateRefreshToken(userid);
+    await tokenModel.create({ email: value.email ,
+      AccessToken:accessToken,RefreshToken:refreshToken,Created_on:date,Modified_on:date
+    }).then(()=>{
+      return res.status(500).send({message:"Db error"})
+    })
+    console.log("token saved")
     otpmap.delete(value.email);
     return res.status(200).json({
       message: "user registered sucessfully",
@@ -361,6 +370,11 @@ router.post("/login", async (req, res) => {
     console.log(user);
     if (!user) {
       return res.status(401).send({ message: "user not found" });
+    }
+    const tokendata = await tokenModel.find({email})
+    if(!tokendata)
+    {
+      return res.status(401).send({message:"token not found in db"})
     }
     const hashpass = user.password;
     const id = { id: user.id };
@@ -396,7 +410,10 @@ router.post("/login", async (req, res) => {
           });
           await newUser.save();
         }
-
+        tokendata.AccessToken = accessToken;
+        tokendata.RefreshToken = refreshToken;
+        tokendata.Modified_on = date
+        await tokendata.save();
         return res.status(200).send({
           message: "password is correct",
           email: user.email,
