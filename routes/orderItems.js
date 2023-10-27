@@ -132,9 +132,9 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       userId: userId,
       orders: orderHistory,
       totalPrice: amount,
-      orderType:'User',
-      orderTo:data.rollno,
-      orderBy:data.rollno,
+      orderType: "User",
+      orderBy: data.rollno,
+      orderTo: data.rollno,
       date:date()
     });
 
@@ -250,14 +250,13 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
 
     const adminMail = await adminModel.findById(userId, "email");
 
-    const add = new orderModel({
-      orderType:'Admin',
-      orderBy:adminMail.email,
-      orderTo:userBal.rollno,
+    const add = new orderModel({ 
+      orderType: "Admin",
+      orderBy: adminMail.email,
+      orderTo: userBal.rollno,
       userId: rollno,
       orders: orderHistory,
       totalPrice: amount,
-      date: new Date()
     });
 
     const status = await add.save({ session });
