@@ -119,7 +119,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       totalPrice: amount,
       orderType: "User",
       orderBy: data.rollno,
-      orderTo: userId,
+      orderTo: data.rollno,
     });
 
     const status = await add.save({ session });
@@ -234,7 +234,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
 
     const adminMail = await adminModel.findById(userId, "email");
 
-    const add = new orderModel({
+    const add = new orderModel({ 
       orderType: "Admin",
       orderBy: adminMail.email,
       orderTo: userBal.rollno,
