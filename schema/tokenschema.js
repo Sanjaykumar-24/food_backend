@@ -29,10 +29,11 @@ const tokenSchema = new mongoose.Schema({
         type:String
     },
     Created_on:{
-        type:Date
+        type:String
     },
     Modified_on:{
-        type:Date
+        type:String,
+        default:date()
     }
 }) 
 const tokenModel= mongoose.model('Token',tokenSchema)
