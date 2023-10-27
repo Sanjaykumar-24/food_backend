@@ -2,7 +2,7 @@ const express = require("express");
 const excelJs = require("exceljs");
 const transactionModel = require("../schema/transactiondb");
 const router = express.Router();
-const UserOrderModel = require("../schema/userOrder");
+const orderModel = require("../schema/orders");
 
 // router.get("/transaction",async(req,res)=>{
 //    try
