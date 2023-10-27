@@ -28,10 +28,6 @@ const userOrderSchema = new mongoose.Schema({
   orderTo:{
     type:String
   },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-  },
   orders: [orderSchema],
   totalPrice: {
     type: Number,
