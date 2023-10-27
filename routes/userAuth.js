@@ -24,6 +24,7 @@ const transporter = nodemailer.createTransport(
     },
   })
 );
+const date_=date()
 const generrateAccessToken = (user) => {
   const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETKEY, {
     expiresIn: "15m",
@@ -337,8 +338,9 @@ router.post("/register", async (req, res) => {
     const userid = { id: data.id };
     const accessToken = generrateAccessToken(userid);
     const refreshToken = generateRefreshToken(userid);
+    
     await tokenModel.create({ email: value.email ,
-      AccessToken:accessToken,RefreshToken:refreshToken,Created_on:date,Modified_on:date
+      AccessToken:accessToken,RefreshToken:refreshToken,Created_on:date_,Modified_on:date_
     }).then(()=>{
       return res.status(500).send({message:"Db error"})
     })
@@ -412,7 +414,7 @@ router.post("/login", async (req, res) => {
         }
         tokendata.AccessToken = accessToken;
         tokendata.RefreshToken = refreshToken;
-        tokendata.Modified_on = date
+        tokendata.Modified_on = date_
         await tokendata.save();
         return res.status(200).send({
           message: "password is correct",
