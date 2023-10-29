@@ -8,10 +8,13 @@ const smtpTransporter = require("nodemailer-smtp-transport");
 const router = express.Router();
 require("dotenv").config();
 const userModel = require("../schema/user");
-const e = require("express");
+// const e = require("express");
 const { UserverifyMiddleware } = require("./verifyMiddleware");
 const AdminloginModel = require("../schema/userlogindetails");
 const userloginModel = require("../schema/userlogindetails");
+const tokenModel = require("../schema/tokenschema");
+const date = require("./date");
+
 const transporter = nodemailer.createTransport(
   smtpTransporter({
     service: "Gmail",
@@ -21,6 +24,7 @@ const transporter = nodemailer.createTransport(
     },
   })
 );
+
 const generrateAccessToken = (user) => {
   const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETKEY, {
     expiresIn: "15m",
@@ -334,6 +338,12 @@ router.post("/register", async (req, res) => {
     const userid = { id: data.id };
     const accessToken = generrateAccessToken(userid);
     const refreshToken = generateRefreshToken(userid);
+    const date_=date()
+    console.log(date);
+    await tokenModel.create({ email: value.email ,
+      AccessToken:accessToken,RefreshToken:refreshToken,Created_on:date_,Modified_on:date_
+    })
+    console.log("token saved")
     otpmap.delete(value.email);
     return res.status(200).json({
       message: "user registered sucessfully",
@@ -362,6 +372,7 @@ router.post("/login", async (req, res) => {
     if (!user) {
       return res.status(401).send({ message: "user not found" });
     }
+   
     const hashpass = user.password;
     const id = { id: user.id };
     bcrypt.compare(password, hashpass, async (err, result) => {
@@ -369,7 +380,7 @@ router.post("/login", async (req, res) => {
         return res
           .status(500)
           .send({ message: "error while comparing password" });
-      }
+      }      
       if (!result) {
         console.log("Incorrect password!");
         return res.status(401).send({ message: "Incorrect password" });
@@ -378,7 +389,6 @@ router.post("/login", async (req, res) => {
         const accessToken = generrateAccessToken(id);
         const refreshToken = generateRefreshToken(id);
         const userdetails = await userloginModel.findOne({ email });
-
         if (userdetails) {
           if (userdetails.isLogged) {
             return res
@@ -396,7 +406,19 @@ router.post("/login", async (req, res) => {
           });
           await newUser.save();
         }
+        let tokendata = await tokenModel.findOne({email });
 
+        if (tokendata) {
+          tokendata.AccessToken = accessToken;
+          tokendata.RefreshToken = refreshToken;
+          tokendata.Modified_on = date()
+          await tokendata.save();
+      
+          console.log("Token Data Updated:", tokendata);
+        } else {
+          console.log("No Token Data found for email:", email);
+        }
+      
         return res.status(200).send({
           message: "password is correct",
           email: user.email,
@@ -444,7 +466,7 @@ router.post("/changepassword", async (req, res) => {
 
 /*token refresh route here*/
 
-router.post("/token", (req, res) => {
+router.post("/token", async(req, res) => {
   try {
     const oldrefreshToken = req.headers.authorization.split(" ")[1];
     if (!oldrefreshToken) {
@@ -453,14 +475,29 @@ router.post("/token", (req, res) => {
     jwt.verify(
       oldrefreshToken,
       process.env.REFRESH_TOKEN_SECRETKEY,
-      (err, user) => {
+      async (err, user) => {
         if (err) {
           console.log(err.message);
           return res.status(401).send({ message: "access token is not valid" });
         }
-        const userid = { id: user?.id };
+        const userid = {id:user?.id};
+        const user_ = await userModel.findById( user.id);
+        console.log(user_)
         const accessToken = generrateAccessToken(userid);
         const refreshToken = generateRefreshToken(userid);
+        console.log(user_)
+        let tokendata = await tokenModel.findOne({email:user_.email});
+
+        if (tokendata) {
+          tokendata.AccessToken = accessToken;
+          tokendata.RefreshToken = refreshToken;
+          tokendata.Modified_on = date()
+          await tokendata.save();
+      
+          console.log("Token Data Updated:", tokendata);
+        } else {
+          console.log("No Token Data found for email:", email);
+        }
         return res.status(200).send({
           message: "token generated",
           accessToken: accessToken,
@@ -482,6 +519,18 @@ router.post("/logout", UserverifyMiddleware, async (req, res) => {
     const userdetails = await userModel.findById(userId);
     const { email } = userdetails.email;
     const deleteduser = await userloginModel.findOneAndRemove(email);
+    let tokendata = await tokenModel.findOne({email:userdetails.email});
+
+        if (tokendata) {
+          tokendata.AccessToken = "No token";
+          tokendata.RefreshToken = "No Token";
+          tokendata.Modified_on = date()
+          await tokendata.save();
+      
+          console.log("Token Data Updated:", tokendata);
+        } else {
+          console.log("No Token Data found for email:", email);
+        }
     console.log(deleteduser);
     if (!deleteduser) {
       console.log("No user logged in");

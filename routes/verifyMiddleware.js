@@ -2,6 +2,8 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const adminModel = require("../schema/admin");
 const userModel = require("../schema/user");
+const tokenModel = require("../schema/tokenschema");
+const date = require("./date");
 
 /*admin verification middleware*/
 
@@ -23,6 +25,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
         const isadmin = await adminModel.findById(user.id);
         if (!isadmin) return res.status(401).send({ message: "not a admin" });
         req.userId = user.id;
+        
         next();
       }
     );
@@ -51,6 +54,17 @@ const UserverifyMiddleware = async (req, res, next) => {
         const isuser = await userModel.findById(user.id);
         if (!isuser) return res.status(401).send({ message: "not a user" });
         req.userId = user.id;
+        const userdetails = await userModel.findById(user.id);
+        let tokendata = await tokenModel.findOne({ email: userdetails.email });
+        console.log("detals:"+tokendata)
+        if(!tokendata)
+        {
+          return res.status(401).send({message:"token not found"})
+        }
+        if(tokendata.AccessToken !== AccessToken)
+        {
+          return res.status(401).send({message:"token is not valid"})
+        }
         next();
       }
     );

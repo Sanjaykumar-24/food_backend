@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const bodyParser = require('body-parser')
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
 const mongoose = require("mongoose");
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cors({ origin: "*" }));
 app.use(fileUpload());
+app.use(bodyParser.json());
 
 /*database connection here*/
 
