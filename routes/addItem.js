@@ -17,8 +17,8 @@ details.push(category_details);
 details.push(item_details);
 
 const folderId = [
-  "1u8dCyFRdl-rMAdSYiV0MFwm1r3bBf5y-",
-  "1jydbPP0jEN1sa0srHy3j9vVxPrrr_CnU",
+  process.env.FOLDER_ID1,
+  process.env.FOLDER_ID2,
 ];
 
 //! Function to authorize, to upload the image to drive
