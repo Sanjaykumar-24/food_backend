@@ -10,6 +10,10 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const { AdminverifyMiddleware } = require("./verifyMiddleware");
 const loginModel = require("../schema/Adminlogindetails");
+const tokenModel = require("../schema/tokenschema");
+const date = require("./date")
+
+
 const verificationCodes = new Map();
 const OTP = () => {
   const otp = otp_generator.generate(6, {
@@ -37,8 +41,8 @@ const transporter = nodemailer.createTransport(
   smtpTransport({
     service: "Gmail",
     auth: {
-      user: "covaitraveller@gmail.com",
-      pass: "ghzn uprx hzdt xohh",
+      user: process.env.EMAIL,
+      pass: process.env.APP_PASS,
     },
   })
 );
@@ -310,7 +314,7 @@ router.post("/register", async (req, res) => {
     });
     const { error, value } = schema.validate(req.body);
     if (error) {
-      return res.status(422).send("invalid data");
+      return res.status(422).send("invalid format");
     }
     const alreadyAdmin = await adminModel.findOne({ email: value.email });
     if (alreadyAdmin) {
@@ -323,13 +327,19 @@ router.post("/register", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const data = await adminModel.create({ email, password: hashedPassword });
-    console.log(data);
+    console.log(data);  
     const userid = { id: data.id };
     const accessToken = generrateAccessToken(userid);
     const refreshToken = generateRefreshToken(userid);
     verificationCodes.delete(email);
+    const date_=date()
+    console.log(date);
+    await tokenModel.create({ email: value.email ,
+      AccessToken:accessToken,RefreshToken:refreshToken,Created_on:date_,Modified_on:date_
+    })
+    console.log("Admin token saved")
     return res.status(200).send({
-      message: "User registered successfully",
+      message: "Admin registered successfully",
       accessToken: accessToken,
       refreshToken: refreshToken,
     });
@@ -382,6 +392,18 @@ router.post("/login", async (req, res) => {
                 isLogged: true
             });
             await newUser.save();
+        }
+        let tokendata = await tokenModel.findOne({email });
+
+        if (tokendata) {
+          tokendata.AccessToken = accessToken;
+          tokendata.RefreshToken = refreshToken;
+          tokendata.Modified_on = date()
+          await tokendata.save();
+      
+          console.log("Token Data Updated:", tokendata);
+        } else {
+          console.log("No Token Data found for email:", email);
         }
         return res.status(200).send({
           message: "login sucessful",
@@ -449,12 +471,25 @@ router.post("/token", async (req, res) => {
     jwt.verify(
       oldrefreshToken,
       process.env.REFRESH_TOKEN_SECRETKEY,
-      (err, user) => {
+      async (err, user) => {
         if (err) {
           console.log(err.message);
           return res.status(401).send({ message: "access token is not valid" });
         }
         const userid = { id: user?.id };
+        const user_ = await userModel.findById( user.id);
+        let tokendata = await tokenModel.findOne({email:user_.email});
+
+        if (tokendata) {
+          tokendata.AccessToken = accessToken;
+          tokendata.RefreshToken = refreshToken;
+          tokendata.Modified_on = date()
+          await tokendata.save();
+      
+          console.log("Token Data Updated:", tokendata);
+        } else {
+          console.log("No Token Data found for this email:", email);
+        }
         const accessToken = generrateAccessToken(userid);
         const refreshToken = generateRefreshToken(userid);
         return res.status(200).send({
@@ -480,6 +515,19 @@ router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
     const Admindetails = await adminModel.findById(userId);
     const {email} = Admindetails.email;
     const deletedAdmin = await loginModel.findOneAndRemove( email )
+    let tokendata = await tokenModel.findOne({email:Admindetails.email});
+
+    if (tokendata) {
+      tokendata.AccessToken = "No token";
+      tokendata.RefreshToken = "No Token";
+      tokendata.Modified_on = date()
+      await tokendata.save();
+  
+      console.log("Token Data Updated:", tokendata);
+    } else {
+      console.log("No Token Data found for email:", email);
+    }
+
     console.log(deletedAdmin)
     if(!deletedAdmin)
     {

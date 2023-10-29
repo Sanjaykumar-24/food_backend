@@ -13,21 +13,7 @@ const adminModel = require("../schema/admin");
 const router = express.Router();
 
 
-function date() {
-  const now = new Date();
-  const options = {
-    timeZone: "Asia/Kolkata",
-    hour12: false,
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  };
-  const istTime = now.toLocaleString("en-IN", options);
-  return istTime;
-}
+
 /**user order route here */
 
 router.post("/user", UserverifyMiddleware, async (req, res) => {
@@ -136,8 +122,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       totalPrice: amount,
       orderType: "User",
       orderBy: data.rollno,
-      orderTo: data.rollno,
-      date:date()
+      orderTo: data.rollno
     });
 
     const status = await add.save({ session });

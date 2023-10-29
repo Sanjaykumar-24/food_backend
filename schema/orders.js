@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const date = require("../routes/date");
 const itemSchema = new mongoose.Schema({
   item_id: {
     type: mongoose.Schema.Types.ObjectId,
@@ -36,7 +37,8 @@ const userOrderSchema = new mongoose.Schema({
     type: Number,
   },
   date: {
-    type: String
+    type: String,
+    default:date()
   }
 });
 
