@@ -3,6 +3,7 @@ const excelJs = require("exceljs");
 const transactionModel = require("../schema/transactiondb");
 const router = express.Router();
 const orderModel = require("../schema/orders");
+const categoryModel = require("../schema/products");
 
 // router.get("/transaction",async(req,res)=>{
 //    try
@@ -197,11 +198,12 @@ router.get("/orders", async (req, res) => {
       { header: "Order Type", key: "order_type", width: 25 },
       { header: "Order By", key: "order_by", width: 25 },
       { header: "Order To", key: "order_to", width: 25 },
-      { header: "order Items", key: "order_items", width: 25 },
-      { header: "", key: "emptyColumn", width: 25 },
-      { header: "", key: "emptyColumn", width: 25 },
-      { header: "", key: "emptyColumn", width: 25 },
-      { header: "", key: "emptyColumn", width: 25 },
+      { header: "Order Items", key: "order_items", width: 25 }, // Include Order Items
+      { header: "Category", key: "category", width: 25 },
+      { header: "Item", key: "item", width: 25 },
+      { header: "Item Price", key: "item_price", width: 25 },
+      { header: "Quantity", key: "quantity", width: 25 },
+      // { header: "Price", key: "price", width: 25 },      
       { header: "Amount", key: "amount", width: 25 },
       { header: "Time", key: "time", width: 25 },
     ];
@@ -240,11 +242,11 @@ router.get("/orders", async (req, res) => {
     const headerCell6 = sheet.getCell("K2");
     headerCell6.alignment = { horizontal: "center", vertical: "middle" };
 
-    sheet.getCell("E3").value = "Category";
-    sheet.getCell("F3").value = "item";
-    sheet.getCell("G3").value = "item price";
-    sheet.getCell("H3").value = "quantity";
-    sheet.getCell("I3").value = "Price";
+    sheet.getCell("E3").value =   {header: "Category", key: "category", width: 25 }.header;
+    sheet.getCell("F3").value =   {header: "Item", key: "item", width: 25 }.header;
+    sheet.getCell("G3").value =   {header: "Item Price", key: "item_price", width: 25 }.header;
+    sheet.getCell("H3").value =   {header: "Quantity", key: "quantity", width: 25 }.header;
+    sheet.getCell("I3").value =   {header: "Price", key: "price", width: 25 }.header;
 
     const subheaderStyle = {
       border: {
@@ -268,6 +270,63 @@ router.get("/orders", async (req, res) => {
     const secondRow = sheet.getRow(3);
     secondRow.height = 25;
     // ---------------------------------------------------------------------------------------------------------------------------------------------//
+
+    const options = {
+      timeZone: "Asia/Kolkata",
+      hour12: false,
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    };
+    const startDate = new Date("2023-10-22T19:39:56").toLocaleString("en-IN", options);
+    const endDate = new Date("2023-10-27T22:00:59").toLocaleString("en-IN", options);
+
+    const result =await orderModel.find({
+      date:{
+        $gte: startDate,
+        $lte: endDate
+      }
+    })
+
+    let start_cell=4;
+
+    result.forEach(async (trans,index)=>{
+
+      sheet.addRow({
+        "order_type":trans.orderType,
+        "order_by":trans.orderBy,
+        "order_to":trans.orderTo,
+        "amount":trans.totalPrice,
+        "time":trans.date       
+      })
+
+      const temp=index;
+
+      trans.orders.forEach(async(item,index)=>{
+        console.log(index+temp)
+        const row = sheet.getRow(start_cell);
+        row.getCell("E").value = "Value for E5";
+        start_cell++
+
+      })
+
+      
+      const len=trans.orders.length
+     
+
+
+      sheet.mergeCells(`B${start_cell}:B${start_cell+len-1}`);
+      sheet.mergeCells(`C${start_cell}:C${start_cell+len-1}`)
+      sheet.mergeCells(`D${start_cell}:D${start_cell+len-1}`)
+      sheet.mergeCells(`J${start_cell}:J${start_cell+len-1}`)
+      sheet.mergeCells(`K${start_cell}:K${start_cell+len-1}`)
+      start_cell+=len;
+
+      
+    })
 
 
 

@@ -257,6 +257,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       orderTo: userBal.rollno,
       orders: orderHistory,
       totalPrice: amount,
+      date:date()
     });
 
     const status = await add.save({ session });
