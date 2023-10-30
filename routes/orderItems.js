@@ -24,14 +24,14 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     const { orders, totalPrice } = req.body;
 
     if (!orders || !totalPrice || totalPrice <= 0) {
-      return res.status(422).json({ message: "Invalid details" });
+      return res.json({ message: "Failed",error:"Invalid details" });
     }
 
     let amount = 0;
     const userBal = await userModel.findById(userId, "amount");
 
     if (userBal.amount < totalPrice) {
-      return res.status(422).json({ message: "Insufficient balance" });
+      return res.json({ message: "Failed",error:"Insufficient balance" });
     }
     const userOrders = [];
     const orderHistory = [];
@@ -53,14 +53,14 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       if (!result) {
         await session.abortTransaction();
         session.endSession();
-        return res.json({ Message: "Item or Category Error" });
+        return res.json({ Message: "Failed",error:"Item or Category Error" });
       }
 
       if (result[0].categorydetails[0].productstock < order.quantity) {
         await session.abortTransaction();
         session.endSession();
-        return res.status(503).json({
-          message: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
+        return res.json({
+          message: "Failed",error:`${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
         });
       }
       amount += result[0].categorydetails[0].productprice * order.quantity;
@@ -68,8 +68,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
         await session.abortTransaction();
         session.endSession();
         return res
-          .status(422)
-          .json({ message: "Insufficient balance while billing" });
+          .json({ message: "Failed",error:"Insufficient balance while billing" });
       }
       await categoryModel.updateOne(
         {
@@ -102,7 +101,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     if (amount != totalPrice) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(500).send({ Message: "Calculation Err!" });
+      return res.json({ Message: "Failed",error:"Calculation Err!" });
     }
 
     await userModel.updateOne(
@@ -129,14 +128,13 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     console.log(status);
     await session.commitTransaction();
     session.endSession();
-    res.json({ userOrders, totalamount: amount });
+    res.json({ message:"Success",userOrders, totalamount: amount });
   } catch (err) {
     console.log("error billing :" + err.message);
     await session.abortTransaction();
     session.endSession();
     return res
-      .status(500)
-      .send({ message: "internal server error =====>" + err.message });
+      .json({ message: "Failed" ,error:err.message });
   }
 });
 
@@ -147,14 +145,14 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     const { orders, totalPrice, rollno } = req.body;
 
     if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
-      return res.status(422).json({ message: "Invalid details" });
+      return res.json({ message: "Failed" ,error:"Invalid details"});
     }
 
     let amount = 0;
     const userBal = await userModel.findOne({ rollno }, "amount rollno");
 
     if (userBal.amount < totalPrice) {
-      return res.status(422).json({ message: "Insufficirnt balance" });
+      return res.json({ message: "Failed",error:"Insufficirnt balance" });
     }
     const userOrders = [];
     const orderHistory = [];
@@ -176,19 +174,18 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       if (!result) {
         await session.abortTransaction();
         session.endSession();
-        return res.json({ Message: "Item or Category Error" });
+        return res.json({ Message: "Failed",error:"Item or Category Error" });
       }
 
       if (result[0].categorydetails[0].productstock < order.quantity) {
         return res.status(503).json({
-          message: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
+          message: "Failed",error:`${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
         });
       }
       amount += result[0].categorydetails[0].productprice * order.quantity;
       if (userBal < amount) {
         return res
-          .status(422)
-          .json({ message: "Insufficient balance while billing" });
+          .json({ message: "Failed",error:"Insufficient balance while billing" });
       }
 
       await categoryModel.updateOne(
@@ -222,7 +219,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     if (amount != totalPrice) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(500).send({ Message: "Calculation Err!" });
+      return res.json({ Message: "Failed",error:"Calculation Err!" });
     }
 
     await userModel.updateOne(
@@ -250,14 +247,13 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     console.log(status);
     await session.commitTransaction();
     session.endSession();
-    res.json({ userOrders, totalamount: amount });
+    res.json({message:"Success", userOrders, totalamount: amount });
   } catch (err) {
     console.log("error :" + err.message);
     await session.abortTransaction();
     session.endSession();
     return res
-      .status(500)
-      .send({ message: "internal server error =====>" + err.message });
+      .json({ message: "Failed" ,error: err.message });
   }
 });
 
@@ -270,11 +266,11 @@ router.post('/qrcode',async(req,res)=>{
   const code = await qrcode.toDataURL(data)
   if(!code)
   {
-    res.send({message:"error occured while generating qr"})
+    res.json({message:"Failed",error:"error occured while generating qr"})
   }
   res.setHeader('Content-type','image/png')
   console.log(code)
-  res.send(code)
+  res.json({message:"Success",code})
 })
 
 

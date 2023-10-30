@@ -54,7 +54,7 @@ router.post("/registergetotp", async (req, res) => {
     const { email } = req.body;
     const admin = await adminModel.findOne({ email: email });
     if (admin) {
-      return res.send({ message: "admin with this mail already exists" });
+      return res.json({ message: "Failed",error:"admin with this mail already exists" });
     }
     const otpvalue = otp_generator.generate(4, {
       digits: true,
@@ -148,10 +148,10 @@ router.post("/registergetotp", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        return res.status(500).send("Error in sending email");
+        return res.json({message:"Failed" , error:error.message});
       } else {
         console.log("Email sent: " + info.response);
-        return res.status(200).send("Check your email for the verification code in spam or inbox");
+        return res.json({message:"Success"});
       }
     });
     const timeID = setTimeout(() => {
@@ -160,7 +160,7 @@ router.post("/registergetotp", async (req, res) => {
     clearTimeout(timeID);
   } catch (error) {
     console.log("error :" + error.message);
-    return res.status(500).send({ message: "Internal server error :"+ error.message});
+    return res.json({ message: "Failed", error:error.message});
   }
 });
 
@@ -171,7 +171,7 @@ router.post("/forgetgetotp", async (req, res) => {
     const { email } = req.body;
     const admin = await adminModel.findOne({ email: email });
     if (!admin) {
-      return res.status(404).send({ message: "admin with this mail not found" });
+      return res.json({ message: "Failed" ,error: "admin with this mail not found"});
     }
     const otpvalue = otp_generator.generate(4, {
       digits: true,
@@ -265,10 +265,10 @@ router.post("/forgetgetotp", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        return res.status(500).send("Error in sending email");
+        return res.json({message:"Failed",error:error.message});
       } else {
         console.log("Email sent: " + info.response);
-        return res.status(200).send("Check your email for the verification code in spam or inbox");
+        return res.json({message:"Success"});;
       }
     });
     const timeID = setTimeout(() => {
@@ -277,7 +277,7 @@ router.post("/forgetgetotp", async (req, res) => {
     clearTimeout(timeID);
   } catch (error) {
     console.log("error :" + error.message);
-    return res.status(500).send({ message: "Internal server error" });
+    return res.json({ message: "Failed" ,error:error.message});
   }
 });
 
@@ -291,15 +291,15 @@ router.post("/otpverify", async (req, res) => {
     console.log(otp);
 
     if (!otp) {
-      return res.status(422).send({ message: "otp expired" });
+      return res.json({ message: "Failed" ,error:"otp expired"  });
     } else if (otp.code == code && otp.exptime > Date.now()) {
-      return res.status(200).send({ message: "otp verified", verifyotp: otp.code });
+      return res.json({ message: "Success", verifyotp: otp.code });
     } else if (otp.code != code) {
-      return res.status(422).send({ message: "invalid otp" });
+      return res.json({ message: "Failed",error:"invalid otp" });
     }
   } catch (error) {
     console.log("error :"+error.message);
-    return res.status(500).send({ message: "internal server error =====>" + error.message});
+    return res.json({ message: "Failed" ,error:error.message});
   }
 });
 
@@ -314,14 +314,14 @@ router.post("/register", async (req, res) => {
     });
     const { error, value } = schema.validate(req.body);
     if (error) {
-      return res.status(422).send("invalid format");
+      return res.json({message:"Failed",error: error.message});
     }
     const alreadyAdmin = await adminModel.findOne({ email: value.email });
     if (alreadyAdmin) {
-      return res.status(409).json({ message: "Admin is already registered" });
+      return res.json({ message: "Failed",error:"Admin is already registered" });
     }
     if (value.verifyotp != verificationCodes.get(value.email)?.code) {
-      return res.status(401).send({ message: "not verified" });
+      return res.json({ message: "Failed" ,error:"not verified"});
     }
     const { email, password } = value;
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -338,14 +338,14 @@ router.post("/register", async (req, res) => {
       AccessToken:accessToken,RefreshToken:refreshToken,Created_on:date_,Modified_on:date_
     })
     console.log("Admin token saved")
-    return res.status(200).send({
-      message: "Admin registered successfully",
+    return res.json({
+      message: "Success",
       accessToken: accessToken,
       refreshToken: refreshToken,
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).send({ message: "Error while registering user" });
+    return res.json({ message: "Failed" ,error:error.message});
   }
 });
 
@@ -356,20 +356,20 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
       console.log("all feilds required");
-      return res.status(400).send({ message: "all fields required" });
+      return res.json({ message: "Failed" ,error:"all fields required"});
     }
     
     const admin = await adminModel.findOne({ email: email });
     if (!admin) {
-      return res.status(401).send({ message: "admin not found" });
+      return res.json({ message: "Failed" ,error:"admin not found"});
     }
     const hashpass = admin.password;
     bcrypt.compare(password, hashpass, async (err, result) => {
       if (err) {
-        return res.status(500).send({ message: "Hashing error" });
+        return res.json({ message:"Failed" ,error:err.message});
       }
       if (!result) {
-        return res.status(401).send({ message: "password wrong" });
+        return res.json({ message:"Failed" ,error:"password wrong"});
       }
       if (result) {
         const userid = { id: admin.id };
@@ -379,7 +379,7 @@ router.post("/login", async (req, res) => {
     
         if (admindetails) { 
             if (admindetails.isLogged) {
-                return res.status(401).send({ message: "This account is already in use" });
+                return res.json({ message: "Failed" ,error:"This account is already in use"});
             } else {
                 admindetails.email = email; 
                 admindetails.isLogged = true; 
@@ -405,8 +405,8 @@ router.post("/login", async (req, res) => {
         } else {
           console.log("No Token Data found for email:", email);
         }
-        return res.status(200).send({
-          message: "login sucessful",
+        return res.json({
+          message: "Success",
           accessToken: accessToken,
           refreshToken: refreshToken,
         });
@@ -414,7 +414,7 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     console.log("error :"+error.message);
-    return res.status(500).send({ message: "internal server error =====>" + error.message});
+    return res.json({ message: "Failed" + error.message});
   }
 });
 
@@ -424,14 +424,14 @@ router.post("/changepassword", async (req, res) => {
   try {
     const { email, newpass, verifyotp } = req.body;
     if (!email || !newpass || !verifyotp) {
-      return res.status(400).json({ Message: "Missing details" });
+      return res.json({ Message: "Failed",error:"Missing details" });
     }
     if (verifyotp != verificationCodes?.get(email)?.code) {
-      return res.status(401).send("otp not verified");
+      return res.json({message:"Failed",error:"otp not verified"});
     }
     const db_user = await adminModel.findOne({ email });
     if (!db_user) {
-      return res.status(404).send({ message: "User not found" });
+      return res.json({ message: "Failed",error:"User not found"});
     }
   
     const hashedPassword = await bcrypt.hash(newpass, 10);
@@ -448,14 +448,14 @@ router.post("/changepassword", async (req, res) => {
     if (updatedDocument) {
       console.log(updatedDocument);
       verificationCodes.delete(email);
-      return res.status(200).send({ message: "Password changed" });
+      return res.json({ message: "Success" });
     } else {
       console.log("Document is empty");
-      return res.status(404).send({ message: "Empty is not allowed" });
+      return res.json({ message: "Failed" ,error:"Empty is not allowed"});
     }
   } catch (err) {
     console.log("error :"+err.message);
-    return res.status(500).send({ message: "internal server error =====>" + err.message});
+    return res.json({ message: "Failed" ,error: err.message});
   }
 });
 
@@ -466,7 +466,7 @@ router.post("/token", async (req, res) => {
     const oldrefreshToken = req.headers.authorization.split(" ")[1];
     if(!oldrefreshToken)
     {
-      res.status(401).send({message:"all deatils required"})
+      res.json({message:"Failed",error:"all deatils required"})
     }
     jwt.verify(
       oldrefreshToken,
@@ -474,7 +474,7 @@ router.post("/token", async (req, res) => {
       async (err, user) => {
         if (err) {
           console.log(err.message);
-          return res.status(401).send({ message: "access token is not valid" });
+          return res.send({ message: "Failed" ,error:err.message});
         }
         const userid = { id: user?.id };
         const user_ = await userModel.findById( user.id);
@@ -492,8 +492,8 @@ router.post("/token", async (req, res) => {
         }
         const accessToken = generrateAccessToken(userid);
         const refreshToken = generateRefreshToken(userid);
-        return res.status(200).send({
-          message: "token generated",
+        return res.json({
+          message: "Success",
           accessToken: accessToken,
           refreshToken: refreshToken,
         });
@@ -501,7 +501,7 @@ router.post("/token", async (req, res) => {
     );
   } catch (error) {
     console.log("error :" + error.message);
-    return res.status(500).send({ message: "Internal server error" });
+    return res.json({ message: "Failed" ,error:error.message});
   }
 });
 
@@ -532,13 +532,13 @@ router.post('/logout',AdminverifyMiddleware,async(req,res)=>{
     if(!deletedAdmin)
     {
       console.log("No user logged in");
-      return res.status(500).send({message:"Logout Failed"})
+      return res.json({ message: "Failed" ,error:"No user logged in"});
     }
-    return res.status(200).send({message:"Logout successfull"})
+    return res.json({message:"Success"});
     
   } catch (error) {
     console.log("error :"+error.message);
-    return res.status(500).send({ message: "internal server error =====>" + error.message});
+    return res.json({ message: "Failed" ,error: error.message});
   }
 })
 
