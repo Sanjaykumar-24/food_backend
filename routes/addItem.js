@@ -106,6 +106,7 @@ router.post("/add_item", async (req, res) => {
   if (!item) {
     return res.json({message:"Error",info:"Insufficient data"})
   }
+  console.log("ID",_id);
 
   const result = await categoryModel.findById(_id);
   if (result === null) {
