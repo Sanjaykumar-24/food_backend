@@ -209,29 +209,33 @@ router.post("/add_category", async (req, res) => {
 //! GET method to get all the categories in the DB
 
 router.get("/get_categories", async (req, res) => {
-  console.log("---------     Getting Categories     ---------");
-  const category = await categoryModel.find({}, "category categoryImage");
-  res.json({message:"SUCCESS",category});
+  try{
+
+    console.log("---------     Getting Categories     ---------");
+    const category = await categoryModel.find({}, "category categoryImage");
+    res.json({message:"SUCCESS",category});
+  }catch(err){
+    res.json({message:"error",info:err.message});
+  }
 });
 
 //! GET method to get the specified category details(category name) returns all the items in the given category
 
 router.get(
-  "/get_categories_details/:category",
+  "/get_categories_details/:categoryid",
   async (req, res) => {
     console.log(
       "---------     Getting Item details In a Category     ---------"
     );
-    const { category } = req.params;
+    const { categoryId } = req.params;
     try {
-      const result = await categoryModel.find({ category: category });
+      const result = await categoryModel.findById(categoryId);
       if (result.length == 0) {
         return res.json({message:"error",info:"Category not found"})
       }
       res.json(result);
       res.json({message:"success",result})
     } catch (err) {
-      res.status(500).send("Fetch Failed");
       res.json({message:"error"})
     }
   }
@@ -245,11 +249,11 @@ router.delete("/remove_category", async (req, res) => {
   try {
     const result = await categoryModel.deleteOne({ _id });
     if (result.deletedCount == 0) {
-      return res.status(422).send("Id is not valid");
+      return res.json({message:"error",info:"Id not found"})
     }
-    return res.status(200).send("Successfully deleted");
+    return res.json({message:"success"})
   } catch (err) {
-    return res.status(500).send("Failed!");
+    return res.json({message:"error",info:"Internal Error"})
   }
 });
 
