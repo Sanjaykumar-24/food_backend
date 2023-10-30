@@ -222,19 +222,18 @@ router.get("/get_categories", async (req, res) => {
 //! GET method to get the specified category details(category name) returns all the items in the given category
 
 router.get(
-  "/get_categories_details/:category",
+  "/get_categories_details/:categoryid",
   async (req, res) => {
     console.log(
       "---------     Getting Item details In a Category     ---------"
     );
-    const { category } = req.params;
+    const { categoryid } = req.params;
     try {
-      const result = await categoryModel.find({ category: category },"-categoryImage -date -_id");
+      const result = await categoryModel.findById(categoryid,"-categoryImage -date -_id -__v");
       if (result.length == 0) {
         return res.json({message:"error",info:"Category not found"})
       }
-      res.json(result);
-      res.json({message:"success",result})
+      return res.json({message:"success",result})
     } catch (err) {
       res.json({message:"error"})
     }
