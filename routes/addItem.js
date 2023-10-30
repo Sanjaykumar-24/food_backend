@@ -93,30 +93,30 @@ async function deleteFile(authClient, fileId) {
 
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
-router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
+router.post("/add_item", async (req, res) => {
   try {
   console.log("---------   Adding Item   ---------");
   if (!req.files || !req.files.image) {
-    return res.status(404).send("Image file not found");
+    return res.json({message:"Image File Not Found!"})
   }
   const { category, item, price, _id, item_stock } = req.body;
   if (_id.length != 24) {
-    return res.status(422).send("Invalid ID");
+    return res.json({message:"Invalid ID"})
   }
   if (!category || !item) {
-    return res.status(400).send("Insufficient data");
+    return res.json({error:"Insufficient data"})
   }
 
   const result = await categoryModel.findById(_id);
   if (result === null) {
-    return res.status(404).send("category does not exist");
+    return res.json({message:"Category Not Found"})
   }
   const subres = await categoryModel.findOne({
     _id,
     categorydetails: { $elemMatch: { productname: item } },
   });
   if (subres) {
-    return res.status(409).send("Item already exist");
+    return res.json({message:"Duplicate Item"})
   }
 
   item_details.category = category;
@@ -162,7 +162,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
 
 //! POST method to add an category to the collection with (categoryname) empty item details wil be created with the category given
 
-router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
+router.post("/add_category", async (req, res) => {
   console.log("--------     Adding Category     ---------");
   const { addCategory } = req.body;
   const uploadImage = req?.files?.image;
@@ -202,13 +202,13 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
       return res.json({message:"Duplicate Category"});
     }
-    res.json({message:"Failed"})
+    res.json({message:"Failed",err:err.message})
   }
 });
 
 //! GET method to get all the categories in the DB
 
-router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
+router.get("/get_categories", async (req, res) => {
   console.log("---------     Getting Categories     ---------");
   const category = await categoryModel.find({}, "category");
   res.json({message:"SUCCESS",category});
@@ -218,7 +218,6 @@ router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
 
 router.get(
   "/get_categories_details/:category",
-  AdminverifyMiddleware,
   async (req, res) => {
     console.log(
       "---------     Getting Item details In a Category     ---------"
@@ -238,7 +237,7 @@ router.get(
 
 //! DELETE method to remove a given category (category _id)
 
-router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
+router.delete("/remove_category", async (req, res) => {
   console.log("---------     Removing Category     ---------");
   const { _id } = req.body;
   try {
@@ -254,7 +253,7 @@ router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
 
 //! DELETE method to remove an item in a specified Category (category _id, item _id)
 
-router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
+router.delete("/remove_item", async (req, res) => {
   console.log("---------     Removing Item     ---------");
   const { category_id, item_id } = req.body;
   try {
@@ -276,7 +275,7 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
 
 //! PATCH method to update an item in the specified category (category _id ,item _id, update *fields*)
 
-router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
+router.patch("/item_update", async (req, res) => {
   console.log("---------     Updating Item     ---------");
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
@@ -321,7 +320,7 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
   }
 });
 
-router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
+router.patch("/category_update", async (req, res) => {
   console.log("---------     Updating Category     ---------");
   const { _id, category } = req.body;
   if (!_id || !category) {
@@ -341,7 +340,7 @@ router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
 
 //!  user routes
 
-router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
+router.get("/user/get_categories", async (req, res) => {
   console.log(
     "---------  USER   ---------     Getting Categories     ---------"
   );
@@ -352,7 +351,6 @@ router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
 
 router.get(
   "/user/get_categories_details/:category",
-  UserverifyMiddleware,
   async (req, res) => {
     console.log(
       "---------    USER   ---------     Getting All item in a Category     ---------"
