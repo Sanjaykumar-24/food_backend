@@ -99,11 +99,11 @@ router.post("/add_item", async (req, res) => {
   if (!req.files || !req.files.image) {
     return res.json({message:"Error",info:"Missing Image"})
   }
-  const { category, item, price, _id, item_stock } = req.body;
+  const {  item, price, _id, item_stock } = req.body;
   if (_id.length != 24) {
     return res.json({message:"Error",info:"ID missing"})
   }
-  if (!category || !item) {
+  if (!item) {
     return res.json({message:"Error",info:"Insufficient data"})
   }
 
