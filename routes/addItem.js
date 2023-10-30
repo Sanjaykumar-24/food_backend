@@ -167,7 +167,7 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
   const { addCategory } = req.body;
   const uploadImage = req?.files?.image;
   if (!addCategory) {
-    return res.status(404).send("Category not found");
+    return res.json({message:"Category not Found"})
   }
   try {
     category_details.name = addCategory;
@@ -196,13 +196,13 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
     } catch (err) {
       console.log("Image Upload Failed");
     }
-    res.status(200).send(`Category added ${status._id}`);
+    res.json({message:"SUCCESS"})
   } catch (err) {
     console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
-      return res.status(409).send("Duplicate Category");
+      return res.json({message:"Duplicate Category"});
     }
-    res.status(500).send("Category add failed");
+    res.json({message:"Failed"})
   }
 });
 
@@ -211,7 +211,7 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
 router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
   console.log("---------     Getting Categories     ---------");
   const category = await categoryModel.find({}, "category");
-  res.json(category);
+  res.json({message:"SUCCESS",category});
 });
 
 //! GET method to get the specified category details(category name) returns all the items in the given category
