@@ -97,26 +97,26 @@ router.post("/add_item", async (req, res) => {
   try {
   console.log("---------   Adding Item   ---------");
   if (!req.files || !req.files.image) {
-    return res.json({message:"Image File Not Found!"})
+    return res.json({message:"Error",info:"Missing Image"})
   }
   const { category, item, price, _id, item_stock } = req.body;
   if (_id.length != 24) {
-    return res.json({message:"Invalid ID"})
+    return res.json({message:"Error",info:"ID missing"})
   }
   if (!category || !item) {
-    return res.json({error:"Insufficient data"})
+    return res.json({message:"Error",info:"Insufficient data"})
   }
 
   const result = await categoryModel.findById(_id);
   if (result === null) {
-    return res.json({message:"Category Not Found"})
+    return res.json({message:"Error",info:"Category not found"})
   }
   const subres = await categoryModel.findOne({
     _id,
     categorydetails: { $elemMatch: { productname: item } },
   });
   if (subres) {
-    return res.json({message:"Duplicate Item"})
+    return res.json({message:"Error",info:"Duplicate category"})
   }
 
   item_details.category = category;
@@ -154,9 +154,9 @@ router.post("/add_item", async (req, res) => {
         },
       }
     );
-    return res.status(200).send("Item added successfully");
+    return res.json({message:"Success",info:"Item added successfully"})
   } catch (err) {
-    return res.status(500).send(`Internal server error ${err}`);
+    return res.json({message:"Error",info:err.message})
   }
 });
 
@@ -167,7 +167,7 @@ router.post("/add_category", async (req, res) => {
   const { addCategory } = req.body;
   const uploadImage = req?.files?.image;
   if (!addCategory) {
-    return res.json({message:"Category not Found"})
+    return res.json({message:"Error",info:"Category not found"})
   }
   try {
     category_details.name = addCategory;
@@ -196,13 +196,13 @@ router.post("/add_category", async (req, res) => {
     } catch (err) {
       console.log("Image Upload Failed");
     }
-    res.json({message:"SUCCESS"})
+    res.json({message:"success"})
   } catch (err) {
     console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
-      return res.json({message:"Duplicate Category"});
+      return res.json({message:"erroe",info:"Duplicate category"});
     }
-    res.json({message:"Failed",err:err.message})
+    res.json({message:"error",info:err.message})
   }
 });
 
@@ -210,7 +210,7 @@ router.post("/add_category", async (req, res) => {
 
 router.get("/get_categories", async (req, res) => {
   console.log("---------     Getting Categories     ---------");
-  const category = await categoryModel.find({}, "category");
+  const category = await categoryModel.find({}, "category categoryImage");
   res.json({message:"SUCCESS",category});
 });
 
@@ -226,11 +226,13 @@ router.get(
     try {
       const result = await categoryModel.find({ category: category });
       if (result.length == 0) {
-        return res.status(409).json(`Category ${category} does not exist`);
+        return res.json({message:"error",info:"Category not found"})
       }
       res.json(result);
+      res.json({message:"success",result})
     } catch (err) {
       res.status(500).send("Fetch Failed");
+      res.json({message:"error"})
     }
   }
 );
