@@ -229,7 +229,7 @@ router.get(
     );
     const { category } = req.params;
     try {
-      const result = await categoryModel.find({ category: category });
+      const result = await categoryModel.find({ category: category },"-categoryImage -date -_id");
       if (result.length == 0) {
         return res.json({message:"error",info:"Category not found"})
       }
