@@ -50,7 +50,7 @@ router.get("/recharge", async (req, res) => {
     let { from, to } = req.query;
 
     if (!from || !to) {
-      return res.status(404).send("Filter not specified");
+      return res.json({message:"Failed",error:"Filter not specified"});
     }
 
     const options = {
@@ -68,7 +68,7 @@ router.get("/recharge", async (req, res) => {
     console.log(startDate + "\n" + endDate);
 
     if (startDate == "Invalid Date" || endDate == "Invalid Date") {
-      return res.send("Invalid date");
+      return res.json({message:"Failed",error:"Invalid date"});
     }
 
     const result = await transactionModel.findOne({
@@ -83,7 +83,7 @@ router.get("/recharge", async (req, res) => {
     });
 
     if (!result) {
-      return res.send("No Transaction Found");
+      return res.send({message:"Failed",error:"No Transaction Found"});
     }
 
     let matchedTransaction;
@@ -162,13 +162,11 @@ router.get("/recharge", async (req, res) => {
     const year = date.getFullYear();
 
     res
-      .status(200)
       .setHeader(
         "Content-Type",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       );
     res
-      .status(200)
       .setHeader(
         "Content-Disposition",
         `attachment; filename= Recharge (${
@@ -176,7 +174,7 @@ router.get("/recharge", async (req, res) => {
         }).xlsx`
       );
     const excel = await workbook.xlsx.writeBuffer();
-    res.status(200).send(excel);
+    res.json({message:"Success",excel});
   } catch (err) {
     console.log(err);
     res.status(500).send("Err");
@@ -331,19 +329,17 @@ router.get("/orders", async (req, res) => {
 
 
     res
-      .status(200)
       .setHeader(
         "Content-Type",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       );
     res
-      .status(200)
       .setHeader("Content-Disposition", `attachment; filename= Order.xlsx`);
     const excel = await workbook.xlsx.writeBuffer();
-    res.status(200).send(excel);
+    res.json({message:"Success",excel});
   } catch (err) {
     console.log(err);
-    res.status(500).send("Internal Server Error");
+    res.json({message:"Failed",error:"Internal Server Error"});
   }
 });
 
