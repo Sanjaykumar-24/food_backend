@@ -120,11 +120,13 @@ router.post("/add_item", async (req, res) => {
     return res.json({message:"Error",info:"Duplicate category"})
   }
 
-  item_details.category = category;
+  console.log("proceddign");
+ 
   item_details.name = item;
   item_details.price = price;
   item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
+
 
   
     const imageBuffer = await sharp(uploadedImage.data)
