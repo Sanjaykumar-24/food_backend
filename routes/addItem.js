@@ -115,20 +115,20 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
           Key: s3Key,
           Body: imageBuffer,
         },
-        (err, data) => {
-          if (err) {
-            return res.json({ message: "failed", error: err.message });
-          }
+          (err, data) => {
+            if (err) {
+             return res.json({ message: "failed", error: err.message });
+            }
+          })
+        const categoryData = {
+          category:category,
+          categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key
         }
-      );
-      const categoryData = {
-        category: category,
-        categoryImage:
-          "https://foodimagesece.s3.eu-north-1.amazonaws.com/" + s3Key,
-      };
-      const addcat = await categoryModel.create(categoryData);
-      return res.json({ message: "success" });
-    } else return res.json({ message: "Failed", error: "image not found" });
+        const addcat = await categoryModel.create(categoryData);
+       return res.json({message:"success"})
+      }
+      else
+      return res.json({message:"Failed",error:"image not found"})
   } catch (err) {
     console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
