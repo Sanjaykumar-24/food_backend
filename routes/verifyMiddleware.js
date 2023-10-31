@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const adminModel = require("../schema/admin");
 const userModel = require("../schema/user");
 const tokenModel = require("../schema/tokenschema");
-const date = require("./date");
+
 
 /*admin verification middleware*/
 
@@ -13,25 +13,34 @@ const AdminverifyMiddleware = async (req, res, next) => {
   try {
     const AccessToken = req.headers.authorization.split(" ")[1];
     if (!AccessToken) {
-      return res.status(401).send({ message: "Illegal Access" });
+      return res.json({ message: "Failed",error:"Illegal Access" });
     }
     jwt.verify(
       AccessToken,
       process.env.ACCESS_TOKEN_SECRETKEY,
       async (err, user) => {
         if (err) {
-          return res.status(401).send({ message: "token error"+err.message });
+          return res.json({ message: "Failed",error:err.message });
         }
         const isadmin = await adminModel.findById(user.id);
-        if (!isadmin) return res.status(401).send({ message: "not a admin" });
+        if (!isadmin) return res.json({ message:"Failed",error: "not a admin" });
         req.userId = user.id;
-        
+        let tokendata = await tokenModel.findOne({ email: isadmin.email });
+        console.log("detals:"+tokendata)
+        if(!tokendata)
+        {
+          return res.json({message:"Failed",error:"token not found"})
+        }
+        if(tokendata.AccessToken !== AccessToken)
+        {
+          return res.json({message:"Failed", error:"token is not valid"})
+        }
         next();
       }
     );
   } catch (error) {
     console.log("Middleware Error: " + error.message);
-    return res.status(500).send({ message: "Internal Middleware error" });
+    return res.json({ message: "Failed",error:error.message });
   }
 };
 
@@ -42,35 +51,35 @@ const UserverifyMiddleware = async (req, res, next) => {
   try {
     const AccessToken = req.headers.authorization.split(" ")[1];
     if (!AccessToken) {
-      res.status(401).send({ message: "Illegal Access" });
+      res.json({ message: "Failed",error:"Illegal Access" });
     }
     jwt.verify(
       AccessToken,
       process.env.ACCESS_TOKEN_SECRETKEY,
       async (err, user) => {
         if (err) {
-          return res.status(500).send({ message: "token error" });
+          return res.json({ message: "Failed",error:err.message});
         }
         const isuser = await userModel.findById(user.id);
-        if (!isuser) return res.status(401).send({ message: "not a user" });
+        if (!isuser) return res.json({ message: "Failed" ,error:"not a user"});
         req.userId = user.id;
-        const userdetails = await userModel.findById(user.id);
-        let tokendata = await tokenModel.findOne({ email: userdetails.email });
+        // const userdetails = await userModel.findById(user.id);
+        let tokendata = await tokenModel.findOne({ email: isuser.email });
         console.log("detals:"+tokendata)
         if(!tokendata)
         {
-          return res.status(401).send({message:"token not found"})
+          return res.json({message:"Failed",error:"token not found"})
         }
         if(tokendata.AccessToken !== AccessToken)
         {
-          return res.status(401).send({message:"token is not valid"})
+          return res.json({message:"Failed",error:"token is not valid"})
         }
         next();
       }
     );
   } catch (error) {
     console.log("Middleware Error: " + error.message);
-    return res.status(500).send({ message: "Internal Middleware error" });
+    return res.json({ message: "Failed",error:error.message});
   }
 };
 

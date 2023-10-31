@@ -8,24 +8,24 @@ router.post('/updatename',UserverifyMiddleware,async(req,res)=>{
       const {newname} = req.body
       if(!username)
       {
-         return res.status(422).send({message:"all feilds required"})
+         return res.json({message:"all feilds required"})
       }
       const user = await userModel.findById(userId)
       if(!user)
       {
-         res.status(401).send({message:"user not found"})
+         res.json({message:"Failed",error:"user not found"})
       }
       const email = user.email
       const updatename = await userModel.updateOne({email:email},{$set:{username:newname}})
       if(!updatename)
       {
-         res.status(500).send({message:"username not updated"})
+         res.json({message:"Failed", error:"username not updated"})
       }
-      res.status(200).send({message:"username updated"})
+      res.json({message:"Success"})
       
    } catch (error) {
       console.log("error :"+error.message);
-      return res.status(500).send({ message: "internal server error =====>" + error.message});
+      return res.json({ message: "Failed" , error:error.message});
    }
 })
 
