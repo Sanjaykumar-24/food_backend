@@ -477,7 +477,7 @@ router.post("/token", async (req, res) => {
           return res.send({ message: "Failed" ,error:"token expired"});
         }
         const userid = { id: user?.id };
-        const user_ = await userModel.findById( user.id);
+        const user_ = await adminModel.findById(user.id);
         let tokendata = await tokenModel.findOne({email:user_.email});
 
         if (tokendata) {
