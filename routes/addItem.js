@@ -54,17 +54,11 @@ router.post("/add_item", async (req, res) => {
        const imageBuffer = await sharp(uploadedImage.data)
       .toFormat("jpg")
       .toBuffer();
-
-    fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
-      if (err) {
-        console.log("Err while converting buffer");
-      }
-    });
   
     const name = item.split(' ').join('')
     const s3Key = name+".jpg"
 
-    await s3.upload({
+    s3.upload({
       Bucket:bucketname,
       Key:s3Key,
       Body:imageBuffer

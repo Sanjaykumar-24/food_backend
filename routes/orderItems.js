@@ -89,8 +89,8 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
         result[0].categorydetails[0].productprice * order.quantity;
       userOrders.push(orderList);
 
-      ordHistory.category_id = order.category_id;
-      ordHistory.item_id = order.item_id;
+      ordHistory.category_id = order.category;
+      ordHistory.item_id = order.item;
       ordHistory.quantity = order.quantity;
       ordHistory.price =
         result[0].categorydetails[0].productprice * order.quantity;
@@ -207,8 +207,8 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
         result[0].categorydetails[0].productprice * order.quantity;
       userOrders.push(orderList);
 
-      ordHistory.category_id = order.category_id;
-      ordHistory.item_id = order.item_id;
+      ordHistory.category_id = order.category;
+      ordHistory.item_id = order.item;
       ordHistory.quantity = order.quantity;
       ordHistory.price =
         result[0].categorydetails[0].productprice * order.quantity;
