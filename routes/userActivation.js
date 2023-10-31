@@ -2,7 +2,7 @@ const express = require('express')
 const  {AdminverifyMiddleware} = require('./verifyMiddleware')
 const router = express.Router()
 const userModel = require("../schema/user")
-router.post('/rfidActivation',AdminverifyMiddleware,async(req,res)=>{
+router.post('/activation',AdminverifyMiddleware,async(req,res)=>{
    try {
       const {rfid,rollno} = req.body
       if(!rfid)

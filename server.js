@@ -12,7 +12,7 @@ const itemRouter = require("./routes/addItem");
 const itemOrder = require("./routes/orderItems");
 const reportRoute = require("./routes/report");
 const printRoute = require("./routes/printOrders")
-
+const RfidactivateRoute = require("./routes/userActivation")
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -47,7 +47,7 @@ app.use("/item", itemRouter);
 app.use("/order", itemOrder);
 app.use("/report", reportRoute);
 app.use("/print",printRoute)
-
+app.use("/rfid",RfidactivateRoute)
 
 app.listen(port, () => {
   console.log(`port http://localhost:${port} is running `);
