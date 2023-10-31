@@ -168,7 +168,7 @@ router.get(
       res.json({message:"error"})
     }
   }
-);
+)
 
 //! DELETE method to remove a given category (category _id)
 

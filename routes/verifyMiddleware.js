@@ -20,7 +20,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
       process.env.ACCESS_TOKEN_SECRETKEY,
       async (err, user) => {
         if (err) {
-          return res.json({ message: "Failed",error:err.message });
+          return res.status(401).json({ message: "Failed",error:err.message });
         }
         const isadmin = await adminModel.findById(user.id);
         if (!isadmin) return res.json({ message:"Failed",error: "not a admin" });
@@ -33,7 +33,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
         }
         if(tokendata.AccessToken !== AccessToken)
         {
-          return res.json({message:"Failed", error:"token is not valid"})
+          return res.status(401).json({message:"Failed", error:"token is not valid"})
         }
         next();
       }

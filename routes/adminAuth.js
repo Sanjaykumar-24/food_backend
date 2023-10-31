@@ -474,7 +474,7 @@ router.post("/token", async (req, res) => {
       async (err, user) => {
         if (err) {
           console.log(err.message);
-          return res.send({ message: "Failed" ,error:err.message});
+          return res.send({ message: "Failed" ,error:"token expired"});
         }
         const userid = { id: user?.id };
         const user_ = await userModel.findById( user.id);
