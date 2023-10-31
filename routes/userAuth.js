@@ -47,8 +47,7 @@ router.post("/registergetotp", async (req, res) => {
     const user = await userModel.findOne({ email: email });
     if (user) {
       return res
-        .status(422)
-        .send({ message: "user with this email already exist" });
+        .json({ message: "Failed",error:"user with this email already exist" });
     }
     const otpvalue = otp.generate(4, {
       digits: true,
@@ -139,12 +138,10 @@ router.post("/registergetotp", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        return res.status(500).send("Error in sending email");
+        return res.json({message:"Failed",error:"Error in sending email"});
       } else {
         console.log("Email sent: " + info.response);
-        return res
-          .status(200)
-          .send("Check your email for the verification code in Spam or Inbox");
+        return res.json({message:"Success"});
       }
     });
     const timeId = setTimeout(() => {
@@ -153,9 +150,7 @@ router.post("/registergetotp", async (req, res) => {
     clearTimeout(timeId);
   } catch (error) {
     console.log("error :" + error.message);
-    return res
-      .status(500)
-      .send({ message: "internal server error =====>" + error.message });
+    return res.json({ message:"Failed",error:error.message});
   }
 });
 
@@ -166,9 +161,7 @@ router.post("/forgetgetotp", async (req, res) => {
     const { email } = req.body;
     const user = await userModel.findOne({ email: email });
     if (!user) {
-      return res
-        .status(401)
-        .send({ message: "user with this email not found" });
+      return res.json({ message:"Failed",error:"user with this email not found" });
     }
     const otpvalue = otp.generate(4, {
       digits: true,
@@ -259,12 +252,10 @@ router.post("/forgetgetotp", async (req, res) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.log(error);
-        return res.status(500).send("Error in sending email");
+        return res.json({message:"Failed",error:"Error in sending email"});
       } else {
         console.log("Email sent: " + info.response);
-        return res
-          .status(200)
-          .send("Check your email for the verification code in Spam or Inbox");
+        return res.json({message:"Success"});
       }
     });
     const timeId = setTimeout(() => {
@@ -273,11 +264,10 @@ router.post("/forgetgetotp", async (req, res) => {
     clearTimeout(timeId);
   } catch (error) {
     console.log("error :" + error.message);
-    return res
-      .status(500)
-      .send({ message: "internal server error =====>" + error.message });
+    return res.json({ message: "Failed" ,error:error.message });
   }
 });
+
 
 /*otpverification route here */
 
@@ -288,19 +278,15 @@ router.post("/otpverify", async (req, res) => {
     const otp = otpmap.get(email);
     console.log(otp);
     if (!otp) {
-      return res.status(401).send({ message: "otp expired" });
+      return res.json({ message:"Failed",error:"otp expired" });
     } else if (otp.code == code && otp.exptime > Date.now()) {
-      return res
-        .status(200)
-        .send({ message: "otp verified", verifyotp: otp.code });
+      return res.json({ message: "Success", verifyotp: otp.code });
     } else if (otp.code != code) {
-      return res.status(401).send({ message: "invalid otp" });
+      return res.json({ message:"Failed" ,error:"invalid otp" });
     }
   } catch (error) {
     console.log("error :" + error.message);
-    return res
-      .status(500)
-      .send({ message: "internal server error =====>" + error.message });
+    return res.json({ message:"Failed" ,error:error.message });
   }
 });
 
@@ -319,19 +305,19 @@ router.post("/register", async (req, res) => {
     console.log(value);
     if (error) {
       console.log(error.message);
-      return res.status(422).send({ message: "invalid data" });
+      return res.json({ message:"Failed",error:"invalid data" });
     }
     const alreadyUser = await userModel.findOne({ email: value.email });
     if (alreadyUser) {
-      return res.status(422).json({ message: "User is already registered" });
+      return res.json({ message:"Failed",error:"User is already registered" });
     }
     if (value.verifyotp != otpmap?.get(value.email)?.code) {
-      return res.status(401).send({ message: "not verified" });
+      return res.json({ message:"Failed",error:"not verified" });
     }
 
     const hashedpassword = await bcrypt.hash(value.password, 10);
     if (!hashedpassword) {
-      return res.status(500).send({ message: "password not hashed" });
+      return res.json({ message:"Failed",error:"password not hashed" });
     }
     value.password = hashedpassword;
     const data = await userModel.create(value);
@@ -345,16 +331,14 @@ router.post("/register", async (req, res) => {
     })
     console.log("token saved")
     otpmap.delete(value.email);
-    return res.status(200).json({
-      message: "user registered sucessfully",
+    return res.json({
+      message: "Success",
       accessToken: accessToken,
       refreshToken: refreshToken,
     });
   } catch (error) {
     console.log("error :" + error.message);
-    return res
-      .status(500)
-      .send({ message: "internal server error =====>" + error.message });
+    return res.json({ message:"Failed" ,error:error.message });
   }
 });
 
@@ -364,13 +348,12 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      console.log("all fields required");
-      return res.status(422).send({ message: "all feilds required" });
+      return res.json({ message:"Failed",error:"all feilds required" });
     }
     const user = await userModel.findOne({ email });
     console.log(user);
     if (!user) {
-      return res.status(401).send({ message: "user not found" });
+      return res.josn({ message:"Failed",error:"user not found" });
     }
    
     const hashpass = user.password;

@@ -1,5 +1,9 @@
 const mongoose = require("mongoose");
-const itemSchema = new mongoose.Schema({
+const orderSchema = new mongoose.Schema({
+  category_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
   item_id: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
@@ -11,14 +15,7 @@ const itemSchema = new mongoose.Schema({
   price: {
     type: Number,
     required: true,
-  }
-})
-const orderSchema = new mongoose.Schema({
-  category_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
   },
-  items:[itemSchema]
 });
 
 const userOrderSchema = new mongoose.Schema({

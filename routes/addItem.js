@@ -1,105 +1,40 @@
 const express = require("express");
 const sharp = require("sharp");
+const AWS = require('aws-sdk')
 const fs = require("fs");
 require("dotenv").config();
-const { google } = require("googleapis");
-const SCOPE = ["https://www.googleapis.com/auth/drive"];
 const router = express.Router();
 const categoryModel = require("../schema/products");
 const {
   AdminverifyMiddleware,
   UserverifyMiddleware,
 } = require("./verifyMiddleware");
-const item_details = {};
-const category_details = {};
-const details = [];
-details.push(category_details);
-details.push(item_details);
 
-const folderId = [
-  "1u8dCyFRdl-rMAdSYiV0MFwm1r3bBf5y-",
-  "1jydbPP0jEN1sa0srHy3j9vVxPrrr_CnU",
-];
+AWS.config.update({
+  accessKeyId:process.env.AWS_SECUREKEY,
+  secretAccessKey:process.env.AWS_SECRETKEY,
+  region:process.env.AWS_LOCATION
+})
 
-//! Function to authorize, to upload the image to drive
+const s3 = new AWS.S3();
+const bucketname = "foodimagesece"
 
-async function authorize() {
-  const jwtClient = await new google.auth.JWT(
-    process.env.CLIENT_EMAIL,
-    null,
-    process.env.PRIVATE_KEY.replace(/"/g, ""),
-    SCOPE
-  );
-  await jwtClient.authorize();
-  return jwtClient;
-}
-
-//! Function to upload the image to google drive and retrive the URL
-
-async function uploadFile(authClient, loc) {
-  return new Promise(async (resolve, rejected) => {
-    console.log("---------     Uploading     ---------");
-    const drive = google.drive({ version: "v3", auth: authClient });
-
-    var fileMetaData = {
-      name: details[loc].name,
-      parents: [folderId[loc]],
-    };
-
-    try {
-      const file = await drive.files.create({
-        resource: fileMetaData,
-        media: {
-          body: fs.createReadStream("./foodimages.jpg"),
-          mimeType: "image/jpg",
-        },
-        fields: "id",
-      });
-      details[loc].url = "https://drive.google.com/uc?id=" + file.data.id;
-      await drive.permissions.create({
-        fileId: file.data.id,
-        requestBody: {
-          role: "reader",
-          type: "anyone",
-        },
-      });
-
-      const result = await drive.files.get({
-        fileId: file.data.id,
-        fields: "webViewLink",
-      });
-
-      const imageUrl = result.data.webViewLink;
-      console.log("---------     Image URL:", imageUrl);
-      resolve(file);
-    } catch (error) {
-      rejected(error);
-    }
-  });
-}
-
-//! Function to delete the image in drive
-
-async function deleteFile(authClient, fileId) {
-  console.log("---------     Deleting Image in drive     ---------");
-  const drive = google.drive({ version: "v3", auth: authClient });
-  try {
-    await drive.files.delete({ fileId: fileId });
-    console.log("File deleted successfully.");
-  } catch (error) {
-    console.error("Error deleting the file:", error);
-  }
-}
+// const item_details = {};
+// const category_details = {};
+// const details = [];
+// details.push(category_details);
+// details.push(item_details);
 
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 
-router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
+router.post("/add_item", async (req, res) => {
   try {
   console.log("---------   Adding Item   ---------");
   if (!req.files || !req.files.image) {
     return res.status(404).send("Image file not found");
   }
   const { category, item, price, _id, item_stock } = req.body;
+
   if (_id.length != 24) {
     return res.status(422).send("Invalid ID");
   }
@@ -119,14 +54,9 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
     return res.status(409).send("Item already exist");
   }
 
-  item_details.category = category;
-  item_details.name = item;
-  item_details.price = price;
-  item_details.item_stock = item_stock;
   const uploadedImage = req.files.image;
 
-  
-    const imageBuffer = await sharp(uploadedImage.data)
+       const imageBuffer = await sharp(uploadedImage.data)
       .toFormat("jpg")
       .toBuffer();
 
@@ -135,21 +65,31 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
         console.log("Err while converting buffer");
       }
     });
+  
+    const name = item.split(' ').join('')
+    const s3Key = name+".jpg"
 
-    console.log("---------     File write success     --------");
+    await s3.upload({
+      Bucket:bucketname,
+      Key:s3Key,
+      Body:imageBuffer
+    },
+    (err,data)=>{
+      if(err)
+      {
+        res.json({message:"failed",error:err.message})
+      }
+    })
 
-    const authClient = await authorize();
-
-    await uploadFile(authClient, 1);
     await categoryModel.updateOne(
       { _id },
       {
         $push: {
           categorydetails: {
-            productname: item_details.name,
-            productprice: item_details.price,
-            productstock: item_details.item_stock,
-            productimage: item_details.url,
+            productname: item,
+            productprice: price,
+            productstock: item_stock,
+            productimage: "https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key
           },
         },
       }
@@ -186,11 +126,25 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
             console.log("Err while converting buffer");
           }
         });
-        const authClient = await authorize();
-        await uploadFile(authClient, 0);
+        
+        const name = addCategory.split(' ').join('')
+        const s3Key = name+".jpg"
+    
+        await s3.upload({
+          Bucket:bucketname,
+          Key:s3Key,
+          Body:imageBuffer
+        },
+        (err,data)=>{
+          if(err)
+          {
+            res.json({message:"failed",error:err.message})
+          }
+        })
+
         await categoryModel.updateOne(
           { _id: status._id },
-          { categoryImage: category_details.url }
+          { categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key }
         );
       }
     } catch (err) {
