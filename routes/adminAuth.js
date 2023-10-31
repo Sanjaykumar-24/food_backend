@@ -26,7 +26,7 @@ const OTP = () => {
 
 const generrateAccessToken = (user) => {
   const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETKEY, {
-    expiresIn: "15m",
+    expiresIn: "1m",
   });
   return accessToken;
 };
@@ -477,9 +477,11 @@ router.post("/token", async (req, res) => {
           return res.send({ message: "Failed" ,error:"token expired"});
         }
         const userid = { id: user?.id };
-        const user_ = await adminModel.findById(user.id);
+        const user_ = await adminModel.findById( user.id);
         let tokendata = await tokenModel.findOne({email:user_.email});
 
+        const accessToken = generrateAccessToken(userid);
+        const refreshToken = generateRefreshToken(userid);
         if (tokendata) {
           tokendata.AccessToken = accessToken;
           tokendata.RefreshToken = refreshToken;
@@ -490,8 +492,6 @@ router.post("/token", async (req, res) => {
         } else {
           console.log("No Token Data found for this email:", email);
         }
-        const accessToken = generrateAccessToken(userid);
-        const refreshToken = generateRefreshToken(userid);
         return res.json({
           message: "Success",
           accessToken: accessToken,
