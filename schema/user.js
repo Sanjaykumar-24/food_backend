@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     set: (value) => value.toUpperCase(),
   },
+  rfid:{
+    type:String,
+    unique:true,
+    default:null
+  },
   amount: {
     type: Number,
     default: 0,
