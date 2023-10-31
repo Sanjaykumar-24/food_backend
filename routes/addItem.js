@@ -111,17 +111,13 @@ router.post("/add_category", async(req, res) => {
         const imageBuffer = await sharp(uploadImage.data)
           .toFormat("jpg")
           .toBuffer()
-  
-        fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
-          if (err) {
-            console.log("Err while converting buffer");
-          }
-        });
         
         const name = category.split(' ').join('')
         const s3Key = name+".jpg"
     
-        s3.upload({
+         console.log("shesha0")
+
+        await s3.upload({
           Bucket: bucketname,
           Key: s3Key,
           Body: imageBuffer
@@ -131,17 +127,19 @@ router.post("/add_category", async(req, res) => {
              return res.json({ message: "failed", error: err.message });
             }
           })
+          console.log("fuck")
         const addcat = categoryModel.create({
           category:category,
           categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key
         })
         consle.log(addcat)
        await addcat.save()
+       return res.json({message:"success"})
       }
     } catch (err) {
       console.log("Image Upload Failed");
     }
-    res.json({message:"success"})
+    
   } catch (err) {
     console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
