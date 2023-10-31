@@ -4,6 +4,7 @@ const userModel = require("../schema/user");
 const categoryModel = require("../schema/products");
 const orderModel = require("../schema/orders");
 const qrcode = require('qrcode')
+const date=require('./date')
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
@@ -89,8 +90,8 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
         result[0].categorydetails[0].productprice * order.quantity;
       userOrders.push(orderList);
 
-      ordHistory.category_id = order.category_id;
-      ordHistory.item_id = order.item_id;
+      ordHistory.category_id = order.category;
+      ordHistory.item_id = order.item;
       ordHistory.quantity = order.quantity;
       ordHistory.price =
         result[0].categorydetails[0].productprice * order.quantity;
@@ -144,7 +145,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     const { orders, totalPrice, rollno } = req.body;
 
     if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
-      return res.json({ message: "Failed" ,error:"Invalid details"});
+      return res.json({ message: "Failed" ,error:"not enough data"});
     }
 
     let amount = 0;
@@ -166,8 +167,9 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
           "categorydetails._id": order.item_id,
         },
         {
+          "category": 1,
           "categorydetails.$": 1,
-        }
+        },
       );
 
       if (!result) {
@@ -177,17 +179,22 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       }
 
       if (result[0].categorydetails[0].productstock < order.quantity) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(503).json({
           message: "Failed",error:`${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
         });
       }
+
       amount += result[0].categorydetails[0].productprice * order.quantity;
       if (userBal < amount) {
+        await session.abortTransaction();
+        session.endSession();
         return res
-          .json({ message: "Failed",error:"Insufficient balance while billing" });
+        .json({ message: "Failed",error:"Insufficient balance while billing" });
       }
-
-      await categoryModel.updateOne(
+      
+      const updatestatus =await categoryModel.updateOne(
         {
           _id: order.category_id,
           "categorydetails._id": order.item_id,
@@ -196,19 +203,23 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
           $inc: { "categorydetails.$.productstock": -order.quantity },
         },
         { session }
-      );
+        );
+
+      console.log("Update status",updatestatus);
 
       const orderList = {};
-      const ordHistory = {};
-      orderList.productname = result[0].categorydetails[0].productname;
+      orderList.productname = result[0].category;
       orderList.productprice = result[0].categorydetails[0].productprice;
       orderList.quantity = order.quantity;
       orderList.totalcost =
-        result[0].categorydetails[0].productprice * order.quantity;
+      result[0].categorydetails[0].productprice * order.quantity;
       userOrders.push(orderList);
+      
+      const ordHistory = {};
+      console.log("ORDER",orderList)
 
-      ordHistory.category_id = order.category_id;
-      ordHistory.item_id = order.item_id;
+      ordHistory.category = result[0].category;
+      ordHistory.item = result[0].categorydetails[0].productname;
       ordHistory.quantity = order.quantity;
       ordHistory.price =
         result[0].categorydetails[0].productprice * order.quantity;

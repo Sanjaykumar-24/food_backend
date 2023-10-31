@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 const date = require('../routes/date')
 const orderSchema = new mongoose.Schema({
-  category_id: {
-    type: mongoose.Schema.Types.ObjectId,
+  category: {
+    type: String,
     required: true,
   },
-  item_id: {
-    type: mongoose.Schema.Types.ObjectId,
+  item: {
+    type: String,
     required: true,
   },
   quantity: {
