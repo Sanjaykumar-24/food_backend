@@ -19,11 +19,6 @@ AWS.config.update({
 const s3 = new AWS.S3();
 const bucketname = "foodimagesece"
 
-// const item_details = {};
-// const category_details = {};
-// const details = [];
-// details.push(category_details);
-// details.push(item_details);
 
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 router.post("/add_item", async (req, res) => {
@@ -102,50 +97,46 @@ router.post("/add_item", async (req, res) => {
 
 //! POST method to add an category to the collection with (categoryname) empty item details wil be created with the category given
 
-router.post("/add_category", async (req, res) => {
+router.post("/add_category", async(req, res) => {
   console.log("--------     Adding Category     ---------");
-  const { addCategory } = req.body;
+  const { category } = req.body;
   const uploadImage = req?.files?.image;
-  if (!addCategory) {
+  if (!category) {
     return res.json({message:"Error",info:"Category not found"})
   }
-  try {
-    category_details.name = addCategory;
-    const add = new categoryModel({
-      category: addCategory,
-    });
-    const status = await add.save();
+  try{
     try {
       console.log("---------     Converting Image     ---------");
       if (uploadImage) {
         const imageBuffer = await sharp(uploadImage.data)
           .toFormat("jpg")
-          .toBuffer();
+          .toBuffer()
+  
         fs.writeFile("./foodimages.jpg", imageBuffer, (err) => {
           if (err) {
             console.log("Err while converting buffer");
           }
         });
         
-        const name = addCategory.split(' ').join('')
+        const name = category.split(' ').join('')
         const s3Key = name+".jpg"
     
-        await s3.upload({
-          Bucket:bucketname,
-          Key:s3Key,
-          Body:imageBuffer
+        s3.upload({
+          Bucket: bucketname,
+          Key: s3Key,
+          Body: imageBuffer
         },
-        (err,data)=>{
-          if(err)
-          {
-            res.json({message:"failed",error:err.message})
-          }
+          (err, data) => {
+            if (err) {
+             return res.json({ message: "failed", error: err.message });
+            }
+          })
+        const addcat = categoryModel.create({
+          category:category,
+          categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key
         })
-
-        await categoryModel.updateOne(
-          { _id: status._id },
-          { categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key }
-        );
+        consle.log(addcat)
+       await addcat.save()
       }
     } catch (err) {
       console.log("Image Upload Failed");
