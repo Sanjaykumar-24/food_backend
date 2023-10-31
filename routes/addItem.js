@@ -123,7 +123,7 @@ router.post("/add_category", async(req, res) => {
           categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key
         }
         const addcat = await categoryModel.create(categoryData);
-       return res.json({message:"success"})
+       return res.json({message:"success",id:addcat._id})
       }
       else
       return res.json({message:"Failed",error:"image not found"})
