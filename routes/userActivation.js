@@ -2,20 +2,20 @@ const express = require('express')
 const  {AdminverifyMiddleware} = require('./verifyMiddleware')
 const router = express.Router()
 const userModel = require("../schema/user")
-router.post('/updatename',AdminverifyMiddleware,async(req,res)=>{
+router.post('/rfidActivation',AdminverifyMiddleware,async(req,res)=>{
    try {
-      const {newname,rollno} = req.body
+      const {rfid,rollno} = req.body
+      if(!rfid)
+      {
+         return res.json({message:"Failed",error:"rfid not found"})
+      }
       const user = await userModel.findOne({rollno:rollno})
       if(!user)
       {
          res.json({message:"Failed",error:"user not found"})
       }
-      const email = user.email
-      const updatename = await userModel.updateOne({email:email},{$set:{username:newname}})
-      if(!updatename)
-      {
-         res.json({message:"Failed", error:"username not updated"})
-      }
+      user.rfid = rfid;
+      await user.save();
       res.json({message:"Success"})
       
    } catch (error) {
