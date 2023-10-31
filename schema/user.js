@@ -26,11 +26,9 @@ const userSchema = new mongoose.Schema({
   amount: {
     type: Number,
     default: 0,
-  },
-  createdAt:{
-    type:String,
-    default:date()
   }
+}, {
+  timestamps: true
 });
 const userModel = mongoose.model("users", userSchema);
 module.exports = userModel;
