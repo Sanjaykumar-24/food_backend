@@ -105,19 +105,16 @@ router.post("/add_category", async(req, res) => {
     return res.json({message:"Error",info:"Category not found"})
   }
   try{
-    try {
       console.log("---------     Converting Image     ---------");
       if (uploadImage) {
         const imageBuffer = await sharp(uploadImage.data)
           .toFormat("jpg")
           .toBuffer()
-        
+
         const name = category.split(' ').join('')
         const s3Key = name+".jpg"
-    
-         console.log("shesha0")
 
-        await s3.upload({
+        s3.upload({
           Bucket: bucketname,
           Key: s3Key,
           Body: imageBuffer
@@ -127,19 +124,15 @@ router.post("/add_category", async(req, res) => {
              return res.json({ message: "failed", error: err.message });
             }
           })
-          console.log("fuck")
-        const addcat = categoryModel.create({
+        const categoryData = {
           category:category,
           categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key
-        })
-        consle.log(addcat)
-       await addcat.save()
+        }
+        const addcat = await categoryModel.create(categoryData);
        return res.json({message:"success"})
       }
-    } catch (err) {
-      console.log("Image Upload Failed");
-    }
-    
+      else
+      return res.json({message:"Failed",error:"image not found"})
   } catch (err) {
     console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
