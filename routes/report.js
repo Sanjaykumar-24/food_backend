@@ -82,8 +82,8 @@ router.get("/recharge", async (req, res) => {
       },
     });
 
-    if (!result) {
-      return res.send({ message: "Failed", error: "No Transaction Found" });
+    if (result.length === 0) {
+      return res.json({ message: "No transaction found" });
     }
 
     let matchedTransaction;
@@ -178,10 +178,67 @@ router.get("/recharge", async (req, res) => {
 
 //! Functions to generate report
 
-const daily_order = async () => {};
-
 router.get("/orders", async (req, res) => {
+  const { type } = req.query;
+  if (!type) {
+    return res.json({ message: "Type undefined" });
+  }
   try {
+    switch (type) {
+      case "excel":
+        return orderReportExcel(req, res);
+
+      case "text":
+        return res.json({ message: "Preparing text" });
+
+      case "pdf":
+        return orderReportPdf(req, res);
+
+      default:
+        return res.json({ message: "Error", info: "Type Err" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.json({ message: "Failed", error: "Internal Server Error" });
+  }
+});
+
+const orderReportExcel = async (req, res) => {
+  try {
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res.json({ message: "Failed", error: "Filter not specified" });
+    }
+
+    const options = {
+      timeZone: "Asia/Kolkata",
+      hour12: false,
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    };
+    const startDate = new Date(from).toLocaleString("en-IN", options);
+    const endDate = new Date(to).toLocaleString("en-IN", options);
+    if (startDate == "Invalid Date" || endDate == "Invalid Date") {
+      return res.json({ message: "Failed", error: "Invalid date" });
+    }
+
+    const result = await orderModel.find({
+      date: {
+        $gte: startDate,
+        $lte: endDate,
+      },
+    });
+
+    console.log("Result", result.length);
+
+    if (result.length === 0) {
+      return res.json({ message: "No orders found" });
+    }
+
     // ---------------------------------------------------------------------------------------------------------------------------------------------//
 
     let workbook = new excelJs.Workbook();
@@ -284,32 +341,6 @@ router.get("/orders", async (req, res) => {
     secondRow.height = 25;
     // ---------------------------------------------------------------------------------------------------------------------------------------------//
 
-    const options = {
-      timeZone: "Asia/Kolkata",
-      hour12: false,
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    };
-    const startDate = new Date("2023-10-22T19:39:56").toLocaleString(
-      "en-IN",
-      options
-    );
-    const endDate = new Date("2023-10-32T22:00:59").toLocaleString(
-      "en-IN",
-      options
-    );
-
-    const result = await orderModel.find({
-      date: {
-        $gte: startDate,
-        $lte: endDate,
-      },
-    });
-
     let start_cell = 4;
 
     result.forEach(async (trans, index) => {
@@ -356,6 +387,15 @@ router.get("/orders", async (req, res) => {
     console.log(err);
     res.json({ message: "Failed", error: "Internal Server Error" });
   }
-});
+};
+
+const orderReportPdf = async (req, res) => {
+  try {
+    res.json({ message: "working on PDF" });
+  } catch (err) {
+    console.log(err);
+    res.json({ message: "Failed", error: "Internal Server Error" });
+  }
+};
 
 module.exports = router;
