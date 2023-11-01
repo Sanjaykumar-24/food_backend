@@ -3,16 +3,14 @@ const mongoose = require("mongoose");
 const userModel = require("../schema/user");
 const categoryModel = require("../schema/products");
 const orderModel = require("../schema/orders");
-const qrcode = require('qrcode')
-const date=require('./date')
+const qrcode = require("qrcode");
+const date = require("./date");
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
 } = require("../routes/verifyMiddleware");
 const adminModel = require("../schema/admin");
 const router = express.Router();
-
-
 
 /**user order route here */
 
@@ -24,14 +22,14 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     const { orders, totalPrice } = req.body;
 
     if (!orders || !totalPrice || totalPrice <= 0) {
-      return res.json({ message: "Failed",error:"Invalid details" });
+      return res.json({ message: "Failed", error: "Invalid details" });
     }
 
     let amount = 0;
     const userBal = await userModel.findById(userId, "amount");
 
     if (userBal.amount < totalPrice) {
-      return res.json({ message: "Failed",error:"Insufficient balance" });
+      return res.json({ message: "Failed", error: "Insufficient balance" });
     }
     const userOrders = [];
     const orderHistory = [];
@@ -53,22 +51,25 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       if (!result) {
         await session.abortTransaction();
         session.endSession();
-        return res.json({ Message: "Failed",error:"Item or Category Error" });
+        return res.json({ Message: "Failed", error: "Item or Category Error" });
       }
 
       if (result[0].categorydetails[0].productstock < order.quantity) {
         await session.abortTransaction();
         session.endSession();
         return res.json({
-          message: "Failed",error:`${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
+          message: "Failed",
+          error: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
         });
       }
       amount += result[0].categorydetails[0].productprice * order.quantity;
       if (userBal < amount) {
         await session.abortTransaction();
         session.endSession();
-        return res
-          .json({ message: "Failed",error:"Insufficient balance while billing" });
+        return res.json({
+          message: "Failed",
+          error: "Insufficient balance while billing",
+        });
       }
       await categoryModel.updateOne(
         {
@@ -101,7 +102,7 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
     if (amount != totalPrice) {
       await session.abortTransaction();
       session.endSession();
-      return res.json({ Message: "Failed",error:"Calculation Err!" });
+      return res.json({ Message: "Failed", error: "Calculation Err!" });
     }
 
     await userModel.updateOne(
@@ -121,20 +122,19 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
       totalPrice: amount,
       orderType: "User",
       orderBy: data.rollno,
-      orderTo: data.rollno
+      orderTo: data.rollno,
     });
 
     const status = await add.save({ session });
     console.log(status);
     await session.commitTransaction();
     session.endSession();
-    res.json({ message:"Success",userOrders, totalamount: amount });
+    res.json({ message: "Success", userOrders, totalamount: amount });
   } catch (err) {
     console.log("error billing :" + err.message);
     await session.abortTransaction();
     session.endSession();
-    return res
-      .json({ message: "Failed" ,error:err.message });
+    return res.json({ message: "Failed", error: err.message });
   }
 });
 
@@ -145,14 +145,14 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     const { orders, totalPrice, rollno } = req.body;
 
     if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
-      return res.json({ message: "Failed" ,error:"not enough data"});
+      return res.json({ message: "Failed", error: "not enough data" });
     }
 
     let amount = 0;
     const userBal = await userModel.findOne({ rollno }, "amount rollno");
 
     if (userBal.amount < totalPrice) {
-      return res.json({ message: "Failed",error:"Insufficirnt balance" });
+      return res.json({ message: "Failed", error: "Insufficirnt balance" });
     }
     const userOrders = [];
     const orderHistory = [];
@@ -167,22 +167,23 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
           "categorydetails._id": order.item_id,
         },
         {
-          "category": 1,
+          category: 1,
           "categorydetails.$": 1,
-        },
+        }
       );
 
       if (!result) {
         await session.abortTransaction();
         session.endSession();
-        return res.json({ Message: "Failed",error:"Item or Category Error" });
+        return res.json({ Message: "Failed", error: "Item or Category Error" });
       }
 
       if (result[0].categorydetails[0].productstock < order.quantity) {
         await session.abortTransaction();
         session.endSession();
         return res.status(503).json({
-          message: "Failed",error:`${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
+          message: "Failed",
+          error: `${result[0].categorydetails[0].productname} not available to mentioned your quantity`,
         });
       }
 
@@ -190,11 +191,13 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       if (userBal < amount) {
         await session.abortTransaction();
         session.endSession();
-        return res
-        .json({ message: "Failed",error:"Insufficient balance while billing" });
+        return res.json({
+          message: "Failed",
+          error: "Insufficient balance while billing",
+        });
       }
-      
-      const updatestatus =await categoryModel.updateOne(
+
+      const updatestatus = await categoryModel.updateOne(
         {
           _id: order.category_id,
           "categorydetails._id": order.item_id,
@@ -203,20 +206,20 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
           $inc: { "categorydetails.$.productstock": -order.quantity },
         },
         { session }
-        );
+      );
 
-      console.log("Update status",updatestatus);
+      console.log("Update status", updatestatus);
 
       const orderList = {};
       orderList.productname = result[0].category;
       orderList.productprice = result[0].categorydetails[0].productprice;
       orderList.quantity = order.quantity;
       orderList.totalcost =
-      result[0].categorydetails[0].productprice * order.quantity;
+        result[0].categorydetails[0].productprice * order.quantity;
       userOrders.push(orderList);
-      
+
       const ordHistory = {};
-      console.log("ORDER",orderList)
+      console.log("ORDER", orderList);
 
       ordHistory.category = result[0].category;
       ordHistory.item = result[0].categorydetails[0].productname;
@@ -229,7 +232,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     if (amount != totalPrice) {
       await session.abortTransaction();
       session.endSession();
-      return res.json({ Message: "Failed",error:"Calculation Err!" });
+      return res.json({ Message: "Failed", error: "Calculation Err!" });
     }
 
     await userModel.updateOne(
@@ -244,43 +247,61 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
 
     const adminMail = await adminModel.findById(userId, "email");
 
-    const add = new orderModel({ 
+    const add = new orderModel({
       orderType: "Admin",
       orderBy: adminMail.email,
       orderTo: userBal.rollno,
       orders: orderHistory,
       totalPrice: amount,
-      date:date()
+      date: date(),
     });
 
     const status = await add.save({ session });
     console.log(status);
     await session.commitTransaction();
     session.endSession();
-    res.json({message:"Success", userOrders, totalamount: amount });
+    res.json({ message: "Success", userOrders, totalamount: amount });
   } catch (err) {
     console.log("error :" + err.message);
     await session.abortTransaction();
     session.endSession();
-    return res
-      .json({ message: "Failed" ,error: err.message });
+    return res.json({ message: "Failed", error: err.message });
   }
 });
 
-
 /**qrcode route here */
 
-router.post('/qrcode',async(req,res)=>{
-  const {orderId} = req.body
-  const data = JSON.stringify(orderId)
-  const code = await qrcode.toDataURL(data)
-  if(!code)
-  {
-    res.json({message:"Failed",error:"error occured while generating qr"})
+router.post("/qrcode", async (req, res) => {
+  const { orderId } = req.body;
+  const data = JSON.stringify(orderId);
+  const code = await qrcode.toDataURL(data);
+  if (!code) {
+    res.json({ message: "Failed", error: "error occured while generating qr" });
   }
-  res.setHeader('Content-type','image/png')
-  console.log(code)
-  res.json({message:"Success",code})
-})
+  res.setHeader("Content-type", "image/png");
+  console.log(code);
+  res.json({ message: "Success", code });
+});
 
+router.get("/admin_user", async (req, res) => {
+  console.log("---------------admin_user--------------------");
+
+  try {
+    const { userid } = req.body;
+    if (!userid) {
+      return res.json({ message: "failed", error: "id not provided" });
+    }
+    const result = await userModel.findOne(
+      { $or: [{ rfid: userid }, { rollno: userid }] },
+      "rollno username -_id"
+    );
+    if (!result) {
+      return res.json({ message: "failed", error: "Invalid ID" });
+    } else {
+      return res.json({ message: "success", result });
+    }
+  } catch (err) {
+    res.json({ message: "failed", error: err.message });
+  }
+});
 module.exports = router;
