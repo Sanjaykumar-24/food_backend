@@ -180,8 +180,10 @@ router.get(
 router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
   console.log("---------     Removing Category     ---------");
   const { _id } = req.body;
+  console.log(_id)
   try {
     const result = await categoryModel.deleteOne({ _id });
+    console.log(result)
     if (result.deletedCount == 0) {
       return res.json({ message: "error", info: "Id not found" });
     }
@@ -189,7 +191,7 @@ router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
   } catch (err) {
     return res.json({ message: "error", info: "Internal Error" });
   }
-});
+})
 
 //! DELETE method to remove an item in a specified Category (category _id, item _id)
 
@@ -260,14 +262,16 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
   }
 });
 
+
+
 router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
-  console.log("---------     Updating Category     ---------");
+  console.log("---------     Updating Category     ---------")
   const { _id, category } = req.body;
   if (!_id || !category) {
     return res.status(422).send("insufficient data");
   }
   try {
-    const result = await categoryModel.updateOne({ _id }, { category });
+    const result = await categoryModel.updateOne({ _id }, { category })
     if (result.acknowledged) {
       return res.status(200).send("Update Successfull");
     } else {
@@ -276,9 +280,11 @@ router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
   } catch (err) {
     res.status(500).send("err");
   }
-});
+})
+
 
 //!  user routes
+
 
 router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   console.log(
@@ -287,6 +293,7 @@ router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   const category = await categoryModel.find({}, "category categoryImage");
   res.status(200).json(category);
 });
+
 
 router.get(
   "/user/get_categories_details/:category",

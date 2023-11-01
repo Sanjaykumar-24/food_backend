@@ -5,7 +5,7 @@ const userModel = require("../schema/user")
 router.post('/activation',AdminverifyMiddleware,async(req,res)=>{
    try {
       const {rfid,rollno} = req.body
-      if(!rfid)
+      if(!rfid||!rollno)
       {
          return res.json({message:"Failed",error:"rfid not found"})
       }
