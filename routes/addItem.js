@@ -221,7 +221,7 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
   console.log("---------     Updating Item     ---------");
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
-    return res.status(422).send("Insufficient Data");
+    return res.json({message:"failed",error:"Insufficient data"})
   }
 
   try {
@@ -252,12 +252,12 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
       { arrayFilters: arrayFilters }
     );
     if (result.acknowledged) {
-      return res.status(200).send("Item modified Successfully");
+      return res.json({message:"success"})
     } else {
-      return res.status(422).send("Data invalid");
+      return res.json({message:"failed",error:"Invalid data"})
     }
   } catch (err) {
-    res.status(500).send("Failed");
+    res.json({message:"failed",error:err.message})
     console.log(err);
   }
 });
@@ -268,17 +268,17 @@ router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
   console.log("---------     Updating Category     ---------")
   const { _id, category } = req.body;
   if (!_id || !category) {
-    return res.status(422).send("insufficient data");
+    return res.json({message:"failed",error:"insufficient data"})
   }
   try {
     const result = await categoryModel.updateOne({ _id }, { category })
     if (result.acknowledged) {
-      return res.status(200).send("Update Successfull");
+      return res.json({message:"success"})
     } else {
-      return res.status(500).send("Update Failed");
+      return res.json({message:"failed",error:"Update Failed"})
     }
   } catch (err) {
-    res.status(500).send("err");
+    res.json({message:"failed",error:err.message})
   }
 })
 
