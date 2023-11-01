@@ -177,12 +177,12 @@ router.get(
 
 //! DELETE method to remove a given category (category _id)
 
-router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
+router.delete("/remove_category", AdminverifyMiddleware, async(req, res) => {
   console.log("---------     Removing Category     ---------");
   const { _id } = req.body;
   console.log(_id)
   try {
-    const result = await categoryModel.deleteOne({ _id });
+    const result = await categoryModel.findByIdAndDelete(_id );
     console.log(result)
     if (result.deletedCount == 0) {
       return res.json({ message: "error", info: "Id not found" });
