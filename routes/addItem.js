@@ -204,13 +204,13 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
       { $pull: { categorydetails: { _id: item_id } } }
     );
     if (result.modifiedCount == 0) {
-      return res.status(422).send("Invalid ID");
+      return res.json({message:"failed",error:"Invalid id"});
     }
     if (result.modifiedCount == 1) {
-      return res.status(200).send("Successfully deleted");
+      return res.json({message:"success"})
     }
   } catch (err) {
-    res.status(500).send("err");
+    res.json({message:"failed",message:err.message})
     console.log(`err ${err}`);
   }
 });
