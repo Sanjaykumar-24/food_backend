@@ -283,9 +283,8 @@ router.post("/qrcode", async (req, res) => {
   res.json({ message: "Success", code });
 });
 
-router.get("/admin_user", async (req, res) => {
+router.post("/admin_user", async (req, res) => {
   console.log("---------------admin_user--------------------");
-
   try {
     const { userid } = req.body;
     if (!userid) {
