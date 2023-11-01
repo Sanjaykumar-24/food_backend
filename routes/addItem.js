@@ -199,6 +199,9 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
   console.log("---------     Removing Item     ---------");
   const { category_id, item_id } = req.body;
   try {
+    if(!category_id||!item_id){
+      return res.json({message:"failed",error:"Insufficient data"})
+    }
     const result = await categoryModel.updateOne(
       { _id: category_id },
       { $pull: { categorydetails: { _id: item_id } } }
@@ -210,7 +213,7 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
       return res.json({message:"success"})
     }
   } catch (err) {
-    res.json({message:"failed",message:err.message})
+    res.json({message:"failed",error:err.message})
     console.log(`err ${err}`);
   }
 });
