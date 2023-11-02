@@ -40,25 +40,6 @@ mongoose
     console.error("Database connection error 😔😔☹", err);
   })
 
-    instrument(io, {
-      auth: false,
-      mode: "development",
-    });    
-    // io.use(socketVerifyMiddleware)
-
-    io.on("connection", (socket) => {
-      console.log("SOCKET------------ connected");
-
-      console.log(socket.id);
-      
-      socket.on("disconnect", () => {
-        console.log(socket.id);
-      })
-
-      socket.on("message", (data) => {
-        console.log(data);
-      })
-    })
 
 /*router junction*/
 
@@ -81,6 +62,11 @@ const io = new Server(server, {
     origin: "*",
   }
 });
+
+instrument(io, {
+  auth: false,
+  mode: "development",
+});  
 
 
 // io.use(socketVerifyMiddleware)
