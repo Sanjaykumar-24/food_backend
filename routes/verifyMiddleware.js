@@ -27,6 +27,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
         req.userId = user.id;
         let tokendata = await tokenModel.findOne({ email: isadmin.email });
         console.log("detals:"+tokendata)
+        console.log('ACCESSTOKEN:'+ AccessToken)
         if(!tokendata)
         {
           return res.json({message:"Failed",error:"token not found"})

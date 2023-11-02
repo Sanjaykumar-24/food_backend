@@ -283,7 +283,10 @@ router.post("/qrcode", async (req, res) => {
   res.json({ message: "Success", code });
 });
 
+
+
 router.post("/admin_user", async (req, res) => {
+
   console.log("---------------admin_user--------------------");
   try {
     const { userid } = req.body;
@@ -295,12 +298,13 @@ router.post("/admin_user", async (req, res) => {
       "rollno username -_id"
     );
     if (!result) {
-      return res.json({ message: "failed", error: "Invalid ID" });
+      return res.json({ message: "failed", error: "Invalid ID"})
     } else {
       return res.json({ message: "success", result });
     }
   } catch (err) {
     res.json({ message: "failed", error: err.message });
   }
-});
-module.exports = router;
+})
+
+module.exports = router
