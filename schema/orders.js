@@ -34,7 +34,7 @@ const userOrderSchema = new mongoose.Schema({
     type: Number,
   },
   date: {
-    type: String,
+    type: Date,
     default:date()
   }
 });

@@ -162,8 +162,11 @@ router.get("/orders", async (req, res) => {
   }
 });
 
+// ! Function to send the excel
 const orderReportExcel = async (req, res) => {
   try {
+
+    console.log("----------------Excel Report ----------------")
     const { from, to } = req.query;
     if (!from || !to) {
       return res.json({ message: "Failed", error: "Filter not specified" });
@@ -181,18 +184,24 @@ const orderReportExcel = async (req, res) => {
     };
     const startDate = new Date(from).toLocaleString("en-IN", options);
     const endDate = new Date(to).toLocaleString("en-IN", options);
+
+    // const startDate = new Date(from).toISOString(); // Convert to ISO format
+    // const endDate = new Date(to).toISOString(); // Convert to ISO format
+
+
+    console.log(startDate,"  ",endDate)
     if (startDate == "Invalid Date" || endDate == "Invalid Date") {
       return res.json({ message: "Failed", error: "Invalid date" });
     }
 
     const result = await orderModel.find({
-      date: {
-        $gte: startDate,
-        $lte: endDate,
-      },
+      $and: [
+        { date: { $gte: startDate } },
+        { date: { $lte: endDate } },
+      ],
     });
 
-    console.log("Result", result.length);
+    console.log("Result", result);
 
     if (result.length === 0) {
       return res.json({ message: "No orders found" });
@@ -208,7 +217,6 @@ const orderReportExcel = async (req, res) => {
       { header: "Order By", key: "order_by", width: 25 },
       { header: "Order To", key: "order_to", width: 25 },
       { header: "Order Items", key: "order_items", width: 25 }, // Include Order Items
-      { header: "Category", key: "category", width: 20 },
       { header: "Item", key: "item", width: 25 },
       { header: "Item Price", key: "item_price", width: 10 },
       { header: "Quantity", key: "quantity", width: 10 },

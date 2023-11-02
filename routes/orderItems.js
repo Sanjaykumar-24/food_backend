@@ -12,7 +12,7 @@ const {
 const adminModel = require("../schema/admin");
 const router = express.Router();
 
-/**user order route here */
+// !user order route here
 
 router.post("/user", UserverifyMiddleware, async (req, res) => {
   const session = await mongoose.startSession();
@@ -138,6 +138,8 @@ router.post("/user", UserverifyMiddleware, async (req, res) => {
   }
 });
 
+// !  ADMIN order
+
 router.post("/admin", AdminverifyMiddleware, async (req, res) => {
   const session = await mongoose.startSession();
   try {
@@ -147,10 +149,14 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
       return res.json({ message: "Failed", error: "not enough data" });
     }
-
+    
     let amount = 0;
     const userBal = await userModel.findOne({ rollno }, "amount rollno");
 
+    if(!userBal){
+      return res.json({message:"failed",error:"user not registered"})
+    }
+    
     if (userBal.amount < totalPrice) {
       return res.json({ message: "Failed", error: "Insufficirnt balance" });
     }
@@ -171,8 +177,8 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
           "categorydetails.$": 1,
         }
       );
-
-      if (!result) {
+     
+      if (result.length === 0) {
         await session.abortTransaction();
         session.endSession();
         return res.json({ Message: "Failed", error: "Item or Category Error" });
@@ -208,7 +214,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
         { session }
       );
 
-      console.log("Update status", updatestatus);
+
 
       const orderList = {};
       orderList.productname = result[0].category;
@@ -219,7 +225,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       userOrders.push(orderList);
 
       const ordHistory = {};
-      console.log("ORDER", orderList);
+      
 
       ordHistory.category = result[0].category;
       ordHistory.item = result[0].categorydetails[0].productname;
@@ -234,7 +240,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       session.endSession();
       return res.json({ Message: "Failed", error: "Calculation Err!" });
     }
-
+    
     await userModel.updateOne(
       {
         rollno,
@@ -256,8 +262,9 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       date: date(),
     });
 
+
     const status = await add.save({ session });
-    console.log(status);
+    
     await session.commitTransaction();
     session.endSession();
     res.json({ message: "Success", userOrders, totalamount: amount });

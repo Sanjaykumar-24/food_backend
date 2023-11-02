@@ -11,7 +11,7 @@ const transerAmountSchema = new mongoose.Schema({
         required:true
     },
     amountTransfered:{
-        type:String,
+        type:Number,
         required:true
     },
     date:{
