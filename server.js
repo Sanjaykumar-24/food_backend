@@ -54,9 +54,7 @@ mongoose
     instrument(io, {
       auth: false,
       mode: "development",
-    });
-
-    
+    });    
     // io.use(socketVerifyMiddleware)
 
     io.on("connection", (socket) => {
