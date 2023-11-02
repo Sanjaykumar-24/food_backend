@@ -54,13 +54,13 @@ mongoose
       console.log(socket.id);
       socket.on("disconnect", () => {
         console.log(socket.id);
-      });
+      })
 
       socket.on("message", (data) => {
         console.log(data);
-      });
-    });
-  });
+      })
+    })
+  })
 
 /*router junction*/
 
