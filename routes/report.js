@@ -148,7 +148,7 @@ router.get("/orders", async (req, res) => {
         return orderReportExcel(req, res);
 
       case "text":
-        return res.json({ message: "Preparing text" });
+        return orderReportText(req, res);
 
       case "pdf":
         return orderReportPdf(req, res);
@@ -207,7 +207,7 @@ const orderReportExcel = async (req, res) => {
       { header: "Time", key: "time", width: 25 },
     ];
     sheet.columns = columns;
-    sheet.autoFilter = "B3:K3"
+    sheet.autoFilter = "B3:K3";
 
     for (let i = 2; i <= columns.length; i++) {
       const cell = sheet.getCell(1, i); // The header row is at index 1
@@ -299,8 +299,7 @@ const orderReportExcel = async (req, res) => {
     };
 
     result.forEach(async (trans, index) => {
-      
-      const ord_time= trans.date
+      const ord_time = trans.date;
       const indiaTime = ord_time.toLocaleString("en-US", options);
       const row = sheet.addRow({
         order_type: trans.orderType,
@@ -412,6 +411,38 @@ const orderReportPdf = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.json({ message: "Failed", error: "Internal Server Error" });
+  }
+};
+
+//! function to sent the text
+
+const orderReportText = async (req, res) => {
+  try {
+    console.log("----------------Json Report ----------------");
+    const { from, to } = req.query;
+    if (!from || !to) {
+      return res.json({ message: "Failed", error: "Filter not specified" });
+    }
+
+    const startDate = new Date(from);
+    const endDate = new Date(to);
+
+    if (startDate == "Invalid Date" || endDate == "Invalid Date") {
+      return res.json({ message: "Failed", error: "Invalid date" });
+    }
+
+    const result = await orderModel.find({
+      $and: [{ date: { $gte: from } }, { date: { $lte: to } }],
+    });
+
+
+    if (result.length === 0) {
+      return res.json({ message: "No orders found" });
+    }
+
+    return res.json({ message: "success", result });
+  } catch (err) {
+    return res.json({ message: "failed", error: err.message });
   }
 };
 
