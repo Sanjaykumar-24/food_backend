@@ -32,7 +32,7 @@ router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
       amount: rechargeamount
     };
     console.log(details);
-    const updatedTransaction = await transactionModel.findOne({rollno:details.rollno});
+    const updatedTransaction = await transactionModel.findOne({});
     console.log(updatedTransaction);
     if (!updatedTransaction) {
       await transactionModel.create(details);
