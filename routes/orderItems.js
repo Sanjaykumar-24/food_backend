@@ -258,8 +258,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       orderBy: adminMail.email,
       orderTo: userBal.rollno,
       orders: orderHistory,
-      totalPrice: amount,
-      date: date(),
+      totalPrice: amount
     });
 
 
