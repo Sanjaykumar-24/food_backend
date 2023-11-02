@@ -143,8 +143,8 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
 router.get("/get_categories", AdminverifyMiddleware, async (req, res) => {
   try {
     console.log("---------     Getting Categories     ---------");
-    const category = await categoryModel.find({}, "category categoryImage");
-    res.json({ message: "SUCCESS", category });
+    const result = await categoryModel.find({}, "category categoryImage");
+    res.json({ message: "SUCCESS", result });
   } catch (err) {
     res.json({ message: "error", info: err.message });
   }
