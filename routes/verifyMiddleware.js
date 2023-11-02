@@ -24,7 +24,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
         }
         const isadmin = await adminModel.findById(user.id);
         if (!isadmin) return res.json({ message:"Failed",error: "not a admin" });
-        req.userId = user.id;
+        
         let tokendata = await tokenModel.findOne({ email: isadmin.email });
         console.log("detals:"+tokendata)
         console.log('ACCESSTOKEN:'+ AccessToken)
@@ -36,6 +36,7 @@ const AdminverifyMiddleware = async (req, res, next) => {
         {
           return res.status(401).json({message:"Failed", error:"token is not valid"})
         }
+        req.userId = user.id;
         next();
       }
     );
@@ -82,6 +83,19 @@ const UserverifyMiddleware = async (req, res, next) => {
     console.log("Middleware Error: " + error.message);
     return res.json({ message: "Failed",error:error.message});
   }
-};
+}
+
+
+const socketVerifyMiddleware = async(socket,next)=>{
+       const token = socket.handshake.auth.token
+       jwt.verify(token,process.env.ACCESS_TOKEN_SECRETKEY,async(err,user)=>{
+        if(err)
+        {
+          return res.json({message:"Failed",error:"authentication failed"})
+        }
+        next()
+       })
+}
+
 
 module.exports = { AdminverifyMiddleware, UserverifyMiddleware };
