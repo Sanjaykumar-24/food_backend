@@ -26,7 +26,7 @@ const OTP = () => {
 
 const generrateAccessToken = (user) => {
     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETKEY, {
-        expiresIn: "1d",
+        expiresIn: "1m",
     });
     return accessToken;
 };
@@ -320,7 +320,7 @@ router.post("/register", async(req, res) => {
         if (alreadyAdmin) {
             return res.json({ message: "Failed", error: "Admin is already registered" });
         }
-        if (value.verifyotp != verificationCodes.get(value.email) ? .code) {
+        if (value.verifyotp != verificationCodes.get(value.email) ?.code) {
             return res.json({ message: "Failed", error: "not verified" });
         }
         const { email, password } = value;
@@ -430,7 +430,7 @@ router.post("/changepassword", async(req, res) => {
         if (!email || !newpass || !verifyotp) {
             return res.json({ Message: "Failed", error: "Missing details" });
         }
-        if (verifyotp != verificationCodes ? .get(email) ? .code) {
+        if (verifyotp != verificationCodes ?.get(email) ?.code) {
             return res.json({ message: "Failed", error: "otp not verified" });
         }
         const db_user = await adminModel.findOne({ email });
@@ -479,7 +479,7 @@ router.post("/token", async(req, res) => {
                     console.log(err.message);
                     return res.send({ message: "Failed", error: "token expired" });
                 }
-                const userid = { id: user ? .id };
+                const userid = { id: user ?.id };
                 const user_ = await adminModel.findById(user.id);
                 let tokendata = await tokenModel.findOne({ email: user_.email });
 
