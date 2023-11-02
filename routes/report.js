@@ -54,6 +54,9 @@ router.get("/recharge", async (req, res) => {
       { header: "Amount", key: "amount", width: 25 },
     ];
 
+    sheet.autoFilter = "B2:E3";
+
+
     sheet.insertRow(1, ["", "", "", ""]);
     sheet.getRow(2).height = 35;
     sheet.getRow(2).eachCell((cell, colNumber) => {
@@ -118,7 +121,7 @@ router.get("/recharge", async (req, res) => {
       `attachment; filename= Recharge (${day + "-" + month + "-" + year}).xlsx`
     );
     const excel = await workbook.xlsx.writeBuffer();
-    res.json({ message: "Success", excel });
+    res.send(excel);
   } catch (err) {
     console.log(err);
     res.status(500).send("Err");
