@@ -165,43 +165,25 @@ router.get("/orders", async (req, res) => {
 // ! Function to send the excel
 const orderReportExcel = async (req, res) => {
   try {
-
-    console.log("----------------Excel Report ----------------")
+    console.log("----------------Excel Report ----------------");
     const { from, to } = req.query;
     if (!from || !to) {
       return res.json({ message: "Failed", error: "Filter not specified" });
     }
 
-    const options = {
-      timeZone: "Asia/Kolkata",
-      hour12: false,
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    };
-    const startDate = new Date(from).toLocaleString("en-IN", options);
-    const endDate = new Date(to).toLocaleString("en-IN", options);
+    const startDate = new Date(from);
+    const endDate = new Date(to);
 
-    // const startDate = new Date(from).toISOString(); // Convert to ISO format
-    // const endDate = new Date(to).toISOString(); // Convert to ISO format
-
-
-    console.log(startDate,"  ",endDate)
+    // console.log(startDate,"  ",endDate)
     if (startDate == "Invalid Date" || endDate == "Invalid Date") {
       return res.json({ message: "Failed", error: "Invalid date" });
     }
 
     const result = await orderModel.find({
-      $and: [
-        { date: { $gte: startDate } },
-        { date: { $lte: endDate } },
-      ],
+      $and: [{ date: { $gte: from } }, { date: { $lte: to } }],
     });
 
-    console.log("Result", result);
+    // console.log("Result", result);
 
     if (result.length === 0) {
       return res.json({ message: "No orders found" });
@@ -213,26 +195,27 @@ const orderReportExcel = async (req, res) => {
     const sheet = workbook.addWorksheet("orderReport");
     const columns = [
       { header: "", key: "emptyColumn", width: 10 },
-      { header: "Order Type", key: "order_type", width: 25 },
+      { header: "Order Type", key: "order_type", width: 20 },
       { header: "Order By", key: "order_by", width: 25 },
       { header: "Order To", key: "order_to", width: 25 },
-      { header: "Order Items", key: "order_items", width: 25 }, // Include Order Items
-      { header: "Item", key: "item", width: 25 },
-      { header: "Item Price", key: "item_price", width: 10 },
-      { header: "Quantity", key: "quantity", width: 10 },
-      // { header: "Price", key: "price", width: 25 },
+      { header: "Order Items", key: "order_items", width: 20 }, // Include Order Items
+      { header: "", key: "emptyColumn", width: 20 },
+      { header: "", key: "emptyColumn", width: 10 },
+      { header: "", key: "emptyColumn", width: 10 },
+      { header: "", key: "emptyColumn", width: 10 },
       { header: "Amount", key: "amount", width: 15 },
       { header: "Time", key: "time", width: 25 },
     ];
     sheet.columns = columns;
+    sheet.autoFilter = "B3:K3"
 
     for (let i = 2; i <= columns.length; i++) {
       const cell = sheet.getCell(1, i); // The header row is at index 1
       cell.border = {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        right: { style: "thin" },
-        bottom: { style: "thin" },
+        top: { style: "thick" },
+        left: { style: "thick" },
+        right: { style: "thick" },
+        bottom: { style: "thick" },
       };
       cell.alignment = { horizontal: "center" };
       cell.font = { bold: true, size: 13 };
@@ -262,35 +245,30 @@ const orderReportExcel = async (req, res) => {
     sheet.getCell("E3").value = {
       header: "Category",
       key: "category",
-      width: 20,
     }.header;
     sheet.getCell("F3").value = {
       header: "Item",
       key: "item",
-      width: 20,
     }.header;
     sheet.getCell("G3").value = {
       header: "Item Price",
       key: "item_price",
-      width: 15,
     }.header;
     sheet.getCell("H3").value = {
       header: "Quantity",
       key: "quantity",
-      width: 15,
     }.header;
     sheet.getCell("I3").value = {
       header: "Price",
       key: "price",
-      width: 15,
     }.header;
 
     const subheaderStyle = {
       border: {
-        top: { style: "thin" },
-        left: { style: "thin" },
-        right: { style: "thin" },
-        bottom: { style: "thin" },
+        top: { style: "thick" },
+        left: { style: "thick" },
+        right: { style: "thick" },
+        bottom: { style: "thick" },
       },
       alignment: { horizontal: "center" },
       font: { bold: true, size: 10 },
@@ -309,31 +287,103 @@ const orderReportExcel = async (req, res) => {
     // ---------------------------------------------------------------------------------------------------------------------------------------------//
 
     let start_cell = 4;
+    const options = {
+      timeZone: "Asia/Kolkata",
+      hour12: false,
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    };
 
     result.forEach(async (trans, index) => {
-      sheet.addRow({
+      
+      const ord_time= trans.date
+      const indiaTime = ord_time.toLocaleString("en-US", options);
+      const row = sheet.addRow({
         order_type: trans.orderType,
         order_by: trans.orderBy,
         order_to: trans.orderTo,
         amount: trans.totalPrice,
-        time: trans.date,
+        time: indiaTime,
       });
+      // const firstRow = sheet.getRow(start_cell);
+      // firstRow.height = 35;
+
+      row.getCell("order_type").border = {
+        left: { style: "thick" },
+        bottom: { style: "thin" },
+      };
+      row.getCell("time").border = {
+        right: { style: "thick" },
+        bottom: { style: "thin" },
+      };
+      row.getCell("order_type").alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      row.getCell("order_by").alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      row.getCell("order_by").border = {
+        bottom: { style: "thin" },
+      };
+      row.getCell("order_to").alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      row.getCell("order_to").border = {
+        bottom: { style: "thin" },
+      };
+      row.getCell("amount").alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      row.getCell("amount").border = {
+        bottom: { style: "thin" },
+      };
+      row.getCell("time").alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
 
       const temp = index;
+      const len = trans.orders.length;
 
       trans.orders.forEach(async (item, index) => {
         console.log("ITEMS=", item);
         const row = sheet.getRow(start_cell + index);
         row.getCell("E").value = item.category;
         row.getCell("F").value = item.item;
-        row.getCell("G").value = item.price;
+        row.getCell("G").value = item.price / item.quantity;
         row.getCell("H").value = item.quantity;
-        row.getCell("I").value = item.quantity * item.price;
+        row.getCell("I").value = item.price;
 
-        // start_cell++;
+        console.log(index + "    -------------->    ", len);
+        const firstRow = sheet.getRow(start_cell + index);
+        firstRow.height = 35;
+
+        if (index + 1 === len) {
+          row.getCell("E").border = {
+            bottom: { style: "thin" },
+          };
+          row.getCell("F").border = {
+            bottom: { style: "thin" },
+          };
+          row.getCell("G").border = {
+            bottom: { style: "thin" },
+          };
+          row.getCell("H").border = {
+            bottom: { style: "thin" },
+          };
+          row.getCell("I").border = {
+            bottom: { style: "thin" },
+          };
+        }
       });
-
-      const len = trans.orders.length;
 
       sheet.mergeCells(`B${start_cell}:B${start_cell + len - 1}`);
       sheet.mergeCells(`C${start_cell}:C${start_cell + len - 1}`);
