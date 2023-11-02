@@ -87,7 +87,7 @@ const UserverifyMiddleware = async (req, res, next) => {
 
 
 const socketVerifyMiddleware = async(socket,next)=>{
-       const token = socket.handshake.query.token
+       const token = socket.handshake.auth.token
        console.log("----------------Socket verification----------------",token)
        if(!token)
        {

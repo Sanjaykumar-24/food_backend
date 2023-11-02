@@ -3,6 +3,7 @@ const sharp = require("sharp");
 const AWS = require("aws-sdk");
 const fs = require("fs");
 require("dotenv").config();
+const io = require('../server')
 const router = express.Router();
 const categoryModel = require("../schema/products");
 const {
@@ -170,7 +171,7 @@ router.get(
       }
       return res.json({ message: "success", result });
     } catch (err) {
-      res.json({ message: "error" });
+      res.json({ message: "error" ,error:err.message});
     }
   }
 )
@@ -221,6 +222,8 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
 //! PATCH method to update an item in the specified category (category _id ,item _id, update *fields*)
 
 router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
+  io.emit("updateStock",{item_id:item_id,productstock:100})
+
   console.log("---------     Updating Item     ---------");
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {

@@ -11,7 +11,6 @@ const {
 } = require("../routes/verifyMiddleware");
 const adminModel = require("../schema/admin");
 const router = express.Router();
-
 // !user order route here
 
 router.post("/user", UserverifyMiddleware, async (req, res) => {
