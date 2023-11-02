@@ -10,7 +10,7 @@ const loginSchema = new mongoose.Schema({
         default: false
     },
     date:{
-        type:date(),
+        type:Date,
         default:date()
     }
 });
