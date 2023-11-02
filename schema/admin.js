@@ -3,14 +3,13 @@ const date = require("../routes/date");
 const adminschema = new mongoose.Schema(
     {
         email:{
-            type:String,
-            unique: true
+            type:String
         },
         password:{
             type:String,
         },
         date:{
-            type:String,
+            type:Date,
             default:date()
         }
     }

@@ -5,6 +5,7 @@ const fs = require("fs");
 require("dotenv").config();
 const io = require('../server')
 const router = express.Router();
+const date = require('./date')
 const categoryModel = require("../schema/products");
 const {
   AdminverifyMiddleware,
@@ -81,6 +82,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
             productstock: item_stock,
             productimage:
               "https://foodimagesece.s3.eu-north-1.amazonaws.com/" + s3Key,
+            date:new Date(date())
           },
         },
       }
@@ -123,7 +125,8 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
           })
         const categoryData = {
           category:category,
-          categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key
+          categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key,
+          date:new Date(date())
         }
         const addcat = await categoryModel.create(categoryData);
        return res.json({message:"success"})

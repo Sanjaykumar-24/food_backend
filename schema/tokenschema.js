@@ -16,7 +16,7 @@ const tokenSchema = new mongoose.Schema({
         type:String
     },
     Modified_on:{
-        type:String,
+        type:Date,
         default:date()
     }
 }) 

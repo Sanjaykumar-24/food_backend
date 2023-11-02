@@ -328,6 +328,7 @@ router.post("/register", async(req, res) => {
 
         const data = await adminModel.create({ email, password: hashedPassword });
         console.log(data);
+        console.log(String(data.date))
         const userid = { id: data.id };
         const accessToken = generrateAccessToken(userid);
         const refreshToken = generateRefreshToken(userid);

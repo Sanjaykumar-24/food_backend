@@ -19,7 +19,7 @@ const productSchema = new mongoose.Schema({
     type: String,
   },
   date:{
-    type:String,
+    type:Date,
     default:date()
 }
 });
@@ -37,7 +37,7 @@ const categorySchema = new mongoose.Schema({
     type: [productSchema],
   },
   date:{
-    type:String,
+    type:Date,
     default:date()
 }
 });
