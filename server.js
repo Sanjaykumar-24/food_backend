@@ -13,6 +13,7 @@ const itemOrder = require("./routes/orderItems");
 const reportRoute = require("./routes/report");
 const printRoute = require("./routes/printOrders");
 const RfidactivateRoute = require("./routes/userActivation");
+const {socketVerifyMiddleware}=require('./routes/verifyMiddleware')
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -48,10 +49,14 @@ mongoose
       },
     });
 
+    
+    io.use(socketVerifyMiddleware)
+
     io.on("connection", (socket) => {
-      console.log("SOCKET------------");
+      console.log("SOCKET------------ connected");
 
       console.log(socket.id);
+      
       socket.on("disconnect", () => {
         console.log(socket.id);
       });
