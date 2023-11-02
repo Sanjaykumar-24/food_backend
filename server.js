@@ -13,8 +13,8 @@ const itemOrder = require("./routes/orderItems");
 const reportRoute = require("./routes/report");
 const printRoute = require("./routes/printOrders");
 const RfidactivateRoute = require("./routes/userActivation");
-const {socketVerifyMiddleware}=require('./routes/verifyMiddleware')
-const {instrument} = require('@socket.io/admin-ui') 
+const {socketVerifyMiddleware} = require('./routes/verifyMiddleware')
+const {instrument} = require('@socket.io/admin-ui')
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -40,15 +40,6 @@ mongoose
     console.error("Database connection error 😔😔☹", err);
   })
 
-<<<<<<< HEAD
-=======
-    const io = new Server(server, {
-      cors: {
-        origin: ["https://admin.socket.io"],
-        credentials:true
-      },
-    });
-
     instrument(io, {
       auth: false,
       mode: "development",
@@ -68,8 +59,6 @@ mongoose
         console.log(data);
       })
     })
-  })
->>>>>>> c6676fd78b1d0bf1fc4ae0e24b7d62117d9790aa
 
 /*router junction*/
 
@@ -90,7 +79,7 @@ const server = app.listen(port,()=>{
 const io = new Server(server, {
   cors: {
     origin: "*",
-  },
+  }
 });
 
 
