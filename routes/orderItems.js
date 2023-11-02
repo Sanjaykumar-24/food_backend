@@ -217,7 +217,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
 
 
       const orderList = {};
-      orderList.productname = result[0].category;
+      orderList.productname = result[0].categorydetails[0].productname;
       orderList.productprice = result[0].categorydetails[0].productprice;
       orderList.quantity = order.quantity;
       orderList.totalcost =
