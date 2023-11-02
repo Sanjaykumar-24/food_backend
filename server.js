@@ -14,6 +14,7 @@ const reportRoute = require("./routes/report");
 const printRoute = require("./routes/printOrders");
 const RfidactivateRoute = require("./routes/userActivation");
 const {socketVerifyMiddleware}=require('./routes/verifyMiddleware')
+const {instrument} = require('@socket.io/admin-ui') 
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -45,12 +46,18 @@ mongoose
 
     const io = new Server(server, {
       cors: {
-        origin: "",
+        origin: ["https://admin.socket.io"],
+        credentials:true
       },
     });
 
+    instrument(io, {
+      auth: false,
+      mode: "development",
+    });
+
     
-    io.use(socketVerifyMiddleware)
+    // io.use(socketVerifyMiddleware)
 
     io.on("connection", (socket) => {
       console.log("SOCKET------------ connected");
