@@ -26,7 +26,7 @@ const OTP = () => {
 
 const generrateAccessToken = (user) => {
     const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRETKEY, {
-        expiresIn: "1m",
+        expiresIn: "1d",
     });
     return accessToken;
 };
