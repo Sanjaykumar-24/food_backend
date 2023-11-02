@@ -87,8 +87,12 @@ const UserverifyMiddleware = async (req, res, next) => {
 
 
 const socketVerifyMiddleware = async(socket,next)=>{
-       const token = socket.handshake.auth.token
+       const token = socket.handshake.query.token
        console.log("----------------Socket verification----------------",token)
+       if(!token)
+       {
+        return next(new Error('token error'))
+       }
        jwt.verify(token,process.env.ACCESS_TOKEN_SECRETKEY,async(err,user)=>{
         if(err)
         {
