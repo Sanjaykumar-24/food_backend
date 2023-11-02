@@ -205,9 +205,9 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
     const result = await categoryModel.updateOne(
       { _id: category_id },
       { $pull: { categorydetails: { _id: item_id } } }
-    );
+    )
     if (result.modifiedCount == 0) {
-      return res.json({message:"failed",error:"Invalid id"});
+      return res.json({message:"failed",error:"Invalid id"})
     }
     if (result.modifiedCount == 1) {
       return res.json({message:"success"})
