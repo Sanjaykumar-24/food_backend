@@ -11,20 +11,8 @@ router.get("/recharge", async (req, res) => {
     if (!from || !to) {
       return res.json({ message: "Failed", error: "Filter not specified" });
     }
-
-    const options = {
-      timeZone: "Asia/Kolkata",
-      hour12: false,
-      year: "numeric",
-      month: "short",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    };
-    const startDate = new Date(from).toLocaleString("en-IN", options);
-    const endDate = new Date(to).toLocaleString("en-IN", options);
-    console.log(startDate + "\n" + endDate);
+    const startDate = new Date(from);
+    const endDate = new Date(to);    
 
     if (startDate == "Invalid Date" || endDate == "Invalid Date") {
       return res.json({ message: "Failed", error: "Invalid date" });
@@ -40,6 +28,8 @@ router.get("/recharge", async (req, res) => {
         },
       },
     });
+
+    console.log(result)
 
     if (result.length === 0) {
       return res.json({ message: "No transaction found" });
