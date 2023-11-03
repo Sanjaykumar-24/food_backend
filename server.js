@@ -13,8 +13,8 @@ const itemOrder = require("./routes/orderItems");
 const reportRoute = require("./routes/report");
 const printRoute = require("./routes/printOrders");
 const RfidactivateRoute = require("./routes/userActivation");
-const {socketVerifyMiddleware} = require('./routes/verifyMiddleware')
-const {instrument} = require('@socket.io/admin-ui')
+const { socketVerifyMiddleware } = require("./routes/verifyMiddleware");
+const { instrument } = require("@socket.io/admin-ui");
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -38,8 +38,7 @@ mongoose
   })
   .catch((err) => {
     console.error("Database connection error 😔😔☹", err);
-  })
-
+  });
 
 /*router junction*/
 
@@ -53,40 +52,29 @@ app.use("/report", reportRoute);
 app.use("/print", printRoute);
 app.use("/rfid", RfidactivateRoute);
 
-const server = app.listen(port,()=>{
+const server = app.listen(port, () => {
   console.log(`port http://localhost:${port} is running `);
-})
+});
 
 const io = new Server(server, {
   cors: {
     origin: "*",
-  }
+  },
 });
+io.use(socketVerifyMiddleware);
+app.set("io", io);
 
 instrument(io, {
   auth: false,
   mode: "development",
-});  
-
-
-// io.use(socketVerifyMiddleware)
+});
 
 io.on("connection", (socket) => {
   console.log("SOCKET------------ connected");
 
   console.log(socket.id);
-  
+
   socket.on("disconnect", () => {
-    console.log(socket.id);
-  })
-
-  socket.on("message", (data) => {
-    console.log(data);
-  })
-  socket.on("updateStock",(data)=>{
-    console.log("Emitted message",data)
-    socket.broadcast.emit("updateStock",{update:data.new_stock  })
-  })
-})
-
-module.exports = io
+    console.log("User disconnected ", socket.id);
+  });
+});
