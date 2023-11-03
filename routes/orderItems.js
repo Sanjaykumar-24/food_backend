@@ -166,7 +166,7 @@ router.post("/admin", AdminverifyMiddleware, async(req, res) => {
             if (result.length === 0) {
                 await session.abortTransaction();
                 session.endSession();
-                return res.json({ Message: "Failed", error: "Item or Category Error" });
+                return res.json({ message: "Failed", error: "Item or Category Error" });
             }
 
             if (result[0].categorydetails[0].productstock < order.quantity) {
