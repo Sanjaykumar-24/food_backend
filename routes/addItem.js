@@ -7,6 +7,7 @@ const router = express.Router();
 const date = require("./date");
 const categoryModel = require("../schema/products");
 const emmiter = require("../server");
+const { soc } = require("../transporter/socketTransport.js");
 const {
   AdminverifyMiddleware,
   UserverifyMiddleware,
@@ -224,7 +225,7 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
 //! PATCH method to update an item in the specified category (category _id ,item _id, update *fields*)
 
 router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
-  const io = req.app.get("io");
+  // const io = req.app.get("io");
   console.log("---------     Updating Item     ---------");
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
@@ -273,7 +274,7 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
     );
     if (result.acknowledged) {
       if (productstock) {
-        io.emit("updateStock", {
+        soc.io.emit("updateStock", {
           category_id,
           item_id,
           productstock: Number(productstock) + db_stock,

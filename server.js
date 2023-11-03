@@ -24,6 +24,7 @@ app.use(cors({ origin: "*" }));
 app.use(fileUpload());
 app.use(bodyParser.json());
 const { Server } = require("socket.io");
+const { iosetup } = require("./transporter/socketTransport.js");
 
 /*database connection here*/
 
@@ -61,8 +62,8 @@ const io = new Server(server, {
     origin: "*",
   },
 });
+iosetup(io);
 io.use(socketVerifyMiddleware);
-app.set("io", io);
 
 instrument(io, {
   auth: false,
