@@ -3,7 +3,6 @@ const sharp = require("sharp");
 const AWS = require("aws-sdk");
 const fs = require("fs");
 require("dotenv").config();
-const io = require('../server')
 const router = express.Router();
 const date = require('./date')
 const categoryModel = require("../schema/products");
@@ -225,14 +224,14 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
 //! PATCH method to update an item in the specified category (category _id ,item _id, update *fields*)
 
 router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
-  io.emit("updateStock",{item_id:item_id,productstock:100})
 
   console.log("---------     Updating Item     ---------");
+  // Handle disconnection
+
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
     return res.json({message:"failed",error:"Insufficient data"})
   }
-
   try {
     const { productname, productprice, productstock, productimage } = update;
     const newData = {};
@@ -249,6 +248,7 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
     if (productimage) {
       newData[`categorydetails.$[elem].productimage`] = productimage;
     }
+    
     const arrayFilters = [
       {
         "elem._id": item_id,
@@ -270,7 +270,6 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
     console.log(err);
   }
 });
-
 
 
 router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
@@ -327,4 +326,4 @@ router.get(
   }
 );
 
-module.exports = router;
+module.exports = router

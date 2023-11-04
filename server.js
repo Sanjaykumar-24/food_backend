@@ -1,5 +1,6 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
+const cluster = require('cluster')
+const numCPCs = require('os').cpus().length
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const fileUpload = require("express-fileupload");
@@ -14,7 +15,6 @@ const reportRoute = require("./routes/report");
 const printRoute = require("./routes/printOrders");
 const RfidactivateRoute = require("./routes/userActivation");
 const {socketVerifyMiddleware} = require('./routes/verifyMiddleware')
-const {instrument} = require('@socket.io/admin-ui')
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -40,26 +40,7 @@ mongoose
     console.error("Database connection error 😔😔☹", err);
   })
 
-    instrument(io, {
-      auth: false,
-      mode: "development",
-    });    
-    // io.use(socketVerifyMiddleware)
-
-    io.on("connection", (socket) => {
-      console.log("SOCKET------------ connected");
-
-      console.log(socket.id);
-      
-      socket.on("disconnect", () => {
-        console.log(socket.id);
-      })
-
-      socket.on("message", (data) => {
-        console.log(data);
-      })
-    })
-
+        
 /*router junction*/
 
 app.use("/user", userRouter);
@@ -78,29 +59,23 @@ const server = app.listen(port,()=>{
 
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "*"
   }
 });
 
-
-// io.use(socketVerifyMiddleware)
-
 io.on("connection", (socket) => {
-  console.log("SOCKET------------ connected");
+        console.log("SOCKET------------ connected");
+      
+        console.log(socket.id);
+        
+        socket.on("disconnect", () => {
+          console.log(socket.id);
+        })
+      })
 
-  console.log(socket.id);
-  
-  socket.on("disconnect", () => {
-    console.log(socket.id);
-  })
 
-  socket.on("message", (data) => {
-    console.log(data);
-  })
-  socket.on("updateStock",(data)=>{
-    console.log("Emitted message",data)
-    socket.broadcast.emit("updateStock",{update:data.new_stock  })
-  })
-})
+// instrument(io, {
+//   auth: false,
+//   mode: "development",
+// });
 
-module.exports = io
