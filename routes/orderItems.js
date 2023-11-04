@@ -5,6 +5,7 @@ const categoryModel = require("../schema/products");
 const orderModel = require("../schema/orders");
 const qrcode = require("qrcode");
 const date = require("./date");
+const { soc } = require("../transporter/socketTransport");
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
@@ -161,6 +162,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     }
     const userOrders = [];
     const orderHistory = [];
+    const socEmit = [];
     await session.startTransaction();
 
     for (const order of orders) {
@@ -202,7 +204,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
         });
       }
 
-      const updatestatus = await categoryModel.updateOne(
+      await categoryModel.updateOne(
         {
           _id: order.category_id,
           "categorydetails._id": order.item_id,
@@ -229,6 +231,13 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       ordHistory.price =
         result[0].categorydetails[0].productprice * order.quantity;
       orderHistory.push(ordHistory);
+
+      socEmit.push({
+        category_id: result[0]._id,
+        item_id: result[0].categorydetails[0]._id,
+        productstock:
+          result[0].categorydetails[0].productstock - order.quantity,
+      });
     }
 
     if (amount != totalPrice) {
@@ -262,6 +271,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     await session.commitTransaction();
     session.endSession();
     res.json({ message: "Success", userOrders, totalamount: amount });
+    return soc.io.emit("updateStock", socEmit);
   } catch (err) {
     console.log("error :" + err.message);
     await session.abortTransaction();

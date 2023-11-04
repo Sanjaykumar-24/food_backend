@@ -274,11 +274,11 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
     );
     if (result.acknowledged) {
       if (productstock) {
-        soc.io.emit("updateStock", {
+        soc.io.emit("updateStock", [{
           category_id,
           item_id,
           productstock: Number(productstock) + db_stock,
-        });
+        }]);
       }
       return res.json({ message: "success" });
     } else {
