@@ -3,6 +3,7 @@ const excelJs = require("exceljs");
 const transactionModel = require("../schema/transactiondb");
 const router = express.Router();
 const orderModel = require("../schema/orders");
+const categoryModel = require("../schema/products");
 
 router.get("/recharge", async (req, res) => {
   let { type } = req.query;
@@ -188,6 +189,8 @@ const rechargeReportText = async (req, res) => {
     return res.json({ message: "failed", error: err.message });
   }
 };
+
+// !----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 router.get("/orders", async (req, res) => {
   const { type } = req.query;
@@ -494,6 +497,45 @@ const orderReportText = async (req, res) => {
     return res.json({ message: "success", result });
   } catch (err) {
     return res.json({ message: "failed", error: err.message });
+  }
+};
+
+// !-------------------------------------------------------------------------------------------------------------------------------------------------
+
+router.get("/stock", async (req, res) => {
+  let { type } = req.query;
+  if (!type) {
+    return res.json({ message: failed, error: "type required" });
+  }
+  switch (type) {
+    case "excel":
+      return stockReportExcel(req, res);
+    case "text":
+      return stockReportText(req, res);
+    case "pdf":
+      return res.send("working on pdf");
+    default:
+      return res.json({ message: "failed", error: "type error" });
+  }
+});
+
+const stockReportText = async (req, res) => {
+  try {
+    const result = await categoryModel.find(
+      { "categorydetails.0": { $exists: true } },
+      {
+        _id: 0,
+        category: 1,
+        "categorydetails.productname": 1,
+        "categorydetails.productstock": 1,
+      }
+    );
+    if (result.length === 0) {
+      return res.json({ message: "No category found" });
+    }
+    return res.json({ message: "success", result });
+  } catch (err) {
+    res.json({ message: "failed", error: err.message });
   }
 };
 
