@@ -5,14 +5,32 @@ const router = express.Router();
 const orderModel = require("../schema/orders");
 
 router.get("/recharge", async (req, res) => {
-  try {
-    let { from, to } = req.query;
+  let { type } = req.query;
+  if (!type) {
+    return res.json({ message: failed, error: "type required" });
+  }
+  switch (type) {
+    case "excel":
+      return rechargeReportExcel(req, res);
+    case "text":
+      return rechargeReportText(req, res);
+    case "pdf":
+      return res.send("working on pdf");
+    default:
+      return res.json({ message: "failed", error: "type error" });
+  }
+});
 
+//! Functions to generate report
+
+const rechargeReportExcel = async (req, res) => {
+  const { from, to } = req.query;
+  try {
     if (!from || !to) {
       return res.json({ message: "Failed", error: "Filter not specified" });
     }
     const startDate = new Date(from);
-    const endDate = new Date(to);    
+    const endDate = new Date(to);
 
     if (startDate == "Invalid Date" || endDate == "Invalid Date") {
       return res.json({ message: "Failed", error: "Invalid date" });
@@ -29,7 +47,7 @@ router.get("/recharge", async (req, res) => {
       },
     });
 
-    console.log(result)
+    console.log(result);
 
     if (result.length === 0) {
       return res.json({ message: "No transaction found" });
@@ -55,7 +73,6 @@ router.get("/recharge", async (req, res) => {
     ];
 
     sheet.autoFilter = "B2:E3";
-
 
     sheet.insertRow(1, ["", "", "", ""]);
     sheet.getRow(2).height = 35;
@@ -126,9 +143,51 @@ router.get("/recharge", async (req, res) => {
     console.log(err);
     res.status(500).send("Err");
   }
-});
+};
 
-//! Functions to generate report
+const rechargeReportText = async (req, res) => {
+  const { from, to } = req.query;
+  try {
+    if (!from || !to) {
+      return res.json({ message: "Failed", error: "Filter not specified" });
+    }
+    const startDate = new Date(from);
+    const endDate = new Date(to);
+
+    if (startDate == "Invalid Date" || endDate == "Invalid Date") {
+      return res.json({ message: "Failed", error: "Invalid date" });
+    }
+
+    const result = await transactionModel.findOne({
+      rechargetransaction: {
+        $elemMatch: {
+          date: {
+            $gte: startDate,
+            $lte: endDate,
+          },
+        },
+      },
+    });
+
+    console.log(result);
+
+    if (result.length === 0) {
+      return res.json({ message: "No transaction found" });
+    }
+
+    let matchedTransaction;
+
+    if (result) {
+      matchedTransaction = result.rechargetransaction.filter((item) => {
+        const itemDate = item.date;
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+    }
+    return res.json({ message: "success", result: matchedTransaction });
+  } catch (err) {
+    return res.json({ message: "failed", error: err.message });
+  }
+};
 
 router.get("/orders", async (req, res) => {
   const { type } = req.query;
@@ -427,7 +486,6 @@ const orderReportText = async (req, res) => {
     const result = await orderModel.find({
       $and: [{ date: { $gte: from } }, { date: { $lte: to } }],
     });
-
 
     if (result.length === 0) {
       return res.json({ message: "No orders found" });
