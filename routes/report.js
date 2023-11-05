@@ -8,7 +8,7 @@ const categoryModel = require("../schema/products");
 router.get("/recharge", async (req, res) => {
   let { type } = req.query;
   if (!type) {
-    return res.json({ message: failed, error: "type required" });
+    return res.json({ message: "failed", error: "type required" });
   }
   switch (type) {
     case "excel":
