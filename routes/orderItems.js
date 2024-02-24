@@ -5,6 +5,7 @@ const categoryModel = require("../schema/products");
 const orderModel = require("../schema/orders");
 const qrcode = require("qrcode");
 const date = require("./date");
+const { soc } = require("../transporter/socketTransport");
 const {
   UserverifyMiddleware,
   AdminverifyMiddleware,
@@ -148,19 +149,20 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
     if (!orders || !totalPrice || totalPrice <= 0 || !rollno) {
       return res.json({ message: "Failed", error: "not enough data" });
     }
-    
+
     let amount = 0;
     const userBal = await userModel.findOne({ rollno }, "amount rollno");
 
-    if(!userBal){
-      return res.json({message:"failed",error:"user not registered"})
+    if (!userBal) {
+      return res.json({ message: "failed", error: "user not registered" });
     }
-    
+
     if (userBal.amount < totalPrice) {
       return res.json({ message: "Failed", error: "Insufficirnt balance" });
     }
     const userOrders = [];
     const orderHistory = [];
+    const socEmit = [];
     await session.startTransaction();
 
     for (const order of orders) {
@@ -176,11 +178,11 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
           "categorydetails.$": 1,
         }
       );
-     
+
       if (result.length === 0) {
         await session.abortTransaction();
         session.endSession();
-        return res.json({ Message: "Failed", error: "Item or Category Error" });
+        return res.json({ message: "Failed", error: "Item or Category Error" });
       }
 
       if (result[0].categorydetails[0].productstock < order.quantity) {
@@ -202,7 +204,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
         });
       }
 
-      const updatestatus = await categoryModel.updateOne(
+      await categoryModel.updateOne(
         {
           _id: order.category_id,
           "categorydetails._id": order.item_id,
@@ -213,10 +215,8 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
         { session }
       );
 
-
-
       const orderList = {};
-      orderList.productname = result[0].category;
+      orderList.productname = result[0].categorydetails[0].productname;
       orderList.productprice = result[0].categorydetails[0].productprice;
       orderList.quantity = order.quantity;
       orderList.totalcost =
@@ -224,7 +224,6 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       userOrders.push(orderList);
 
       const ordHistory = {};
-      
 
       ordHistory.category = result[0].category;
       ordHistory.item = result[0].categorydetails[0].productname;
@@ -232,6 +231,13 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       ordHistory.price =
         result[0].categorydetails[0].productprice * order.quantity;
       orderHistory.push(ordHistory);
+
+      socEmit.push({
+        category_id: result[0]._id,
+        item_id: result[0].categorydetails[0]._id,
+        productstock:
+          result[0].categorydetails[0].productstock - order.quantity,
+      });
     }
 
     if (amount != totalPrice) {
@@ -239,7 +245,7 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       session.endSession();
       return res.json({ Message: "Failed", error: "Calculation Err!" });
     }
-    
+
     await userModel.updateOne(
       {
         rollno,
@@ -257,15 +263,15 @@ router.post("/admin", AdminverifyMiddleware, async (req, res) => {
       orderBy: adminMail.email,
       orderTo: userBal.rollno,
       orders: orderHistory,
-      totalPrice: amount
+      totalPrice: amount,
     });
 
-
     const status = await add.save({ session });
-    
+
     await session.commitTransaction();
     session.endSession();
     res.json({ message: "Success", userOrders, totalamount: amount });
+    return soc.io.emit("updateStock", socEmit);
   } catch (err) {
     console.log("error :" + err.message);
     await session.abortTransaction();
@@ -288,10 +294,7 @@ router.post("/qrcode", async (req, res) => {
   res.json({ message: "Success", code });
 });
 
-
-
 router.post("/admin_user", async (req, res) => {
-
   console.log("---------------admin_user--------------------");
   try {
     const { userid } = req.body;
@@ -300,16 +303,16 @@ router.post("/admin_user", async (req, res) => {
     }
     const result = await userModel.findOne(
       { $or: [{ rfid: userid }, { rollno: userid }] },
-      "rollno username -_id"
+      "rollno username -_id amount"
     );
     if (!result) {
-      return res.json({ message: "failed", error: "Invalid ID"})
+      return res.json({ message: "failed", error: "Invalid ID" });
     } else {
       return res.json({ message: "success", result });
     }
   } catch (err) {
     res.json({ message: "failed", error: err.message });
   }
-})
+});
 
-module.exports = router
+module.exports = router;

@@ -4,13 +4,14 @@ const AWS = require("aws-sdk");
 const fs = require("fs");
 require("dotenv").config();
 const router = express.Router();
-const date = require('./date')
+const date = require("./date");
 const categoryModel = require("../schema/products");
+const emmiter = require("../server");
+const { soc } = require("../transporter/socketTransport.js");
 const {
   AdminverifyMiddleware,
   UserverifyMiddleware,
 } = require("./verifyMiddleware");
-
 AWS.config.update({
   accessKeyId: process.env.AWS_SECUREKEY,
   secretAccessKey: process.env.AWS_SECRETKEY,
@@ -81,7 +82,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
             productstock: item_stock,
             productimage:
               "https://foodimagesece.s3.eu-north-1.amazonaws.com/" + s3Key,
-            date:new Date(date())
+            date: new Date(date()),
           },
         },
       }
@@ -117,21 +118,21 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
           Key: s3Key,
           Body: imageBuffer,
         },
-          (err, data) => {
-            if (err) {
-             return res.json({ message: "failed", error: err.message });
-            }
-          })
-        const categoryData = {
-          category:category,
-          categoryImage:"https://foodimagesece.s3.eu-north-1.amazonaws.com/"+s3Key,
-          date:new Date(date())
+        (err, data) => {
+          if (err) {
+            return res.json({ message: "failed", error: err.message });
+          }
         }
-        const addcat = await categoryModel.create(categoryData);
-       return res.json({message:"success"})
-      }
-      else
-      return res.json({message:"Failed",error:"image not found"})
+      );
+      const categoryData = {
+        category: category,
+        categoryImage:
+          "https://foodimagesece.s3.eu-north-1.amazonaws.com/" + s3Key,
+        date: new Date(date()),
+      };
+      const addcat = await categoryModel.create(categoryData);
+      return res.json({ message: "success" });
+    } else return res.json({ message: "Failed", error: "image not found" });
   } catch (err) {
     console.log(err);
     if (err.code === 11000 && err.keyPattern && err.keyValue) {
@@ -173,20 +174,20 @@ router.get(
       }
       return res.json({ message: "success", result });
     } catch (err) {
-      res.json({ message: "error" ,error:err.message});
+      res.json({ message: "error", error: err.message });
     }
   }
-)
+);
 
 //! DELETE method to remove a given category (category _id)
 
 router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
   console.log("---------     Removing Category     ---------");
   const { _id } = req.body;
-  console.log(_id)
+  console.log(_id);
   try {
     const result = await categoryModel.deleteOne({ _id });
-    console.log(result)
+    console.log(result);
     if (result.deletedCount == 0) {
       return res.json({ message: "error", info: "Id not found" });
     }
@@ -194,7 +195,7 @@ router.delete("/remove_category", AdminverifyMiddleware, async (req, res) => {
   } catch (err) {
     return res.json({ message: "error", info: "Internal Error" });
   }
-})
+});
 
 //! DELETE method to remove an item in a specified Category (category _id, item _id)
 
@@ -202,21 +203,21 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
   console.log("---------     Removing Item     ---------");
   const { category_id, item_id } = req.body;
   try {
-    if(!category_id||!item_id){
-      return res.json({message:"failed",error:"Insufficient data"})
+    if (!category_id || !item_id) {
+      return res.json({ message: "failed", error: "Insufficient data" });
     }
     const result = await categoryModel.updateOne(
       { _id: category_id },
       { $pull: { categorydetails: { _id: item_id } } }
-    )
+    );
     if (result.modifiedCount == 0) {
-      return res.json({message:"failed",error:"Invalid id"})
+      return res.json({ message: "failed", error: "Invalid id" });
     }
     if (result.modifiedCount == 1) {
-      return res.json({message:"success"})
+      return res.json({ message: "success" });
     }
   } catch (err) {
-    res.json({message:"failed",error:err.message})
+    res.json({ message: "failed", error: err.message });
     console.log(`err ${err}`);
   }
 });
@@ -225,16 +226,29 @@ router.delete("/remove_item", AdminverifyMiddleware, async (req, res) => {
 
 router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
 
+  // const io = req.app.get("io");
   console.log("---------     Updating Item     ---------");
   // Handle disconnection
 
   const { category_id, item_id, update } = req.body;
   if (!category_id || !item_id || !update) {
-    return res.json({message:"failed",error:"Insufficient data"})
+    return res.json({ message: "failed", error: "Insufficient data" });
   }
   try {
     const { productname, productprice, productstock, productimage } = update;
     const newData = {};
+
+    const prodstock = await categoryModel.find(
+      {
+        _id: category_id,
+        "categorydetails._id": item_id,
+      },
+      {
+        category: 1,
+        "categorydetails.$": 1,
+      }
+    );
+    const db_stock = prodstock[0].categorydetails[0].productstock;
 
     if (productname) {
       newData[`categorydetails.$[elem].productname`] = productname;
@@ -243,7 +257,8 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
       newData[`categorydetails.$[elem].productprice`] = Number(productprice);
     }
     if (productstock) {
-      newData[`categorydetails.$[elem].productstock`] = Number(productstock);
+      newData[`categorydetails.$[elem].productstock`] =
+        db_stock + Number(productstock);
     }
     if (productimage) {
       newData[`categorydetails.$[elem].productimage`] = productimage;
@@ -261,38 +276,42 @@ router.patch("/item_update", AdminverifyMiddleware, async (req, res) => {
       { arrayFilters: arrayFilters }
     );
     if (result.acknowledged) {
-      return res.json({message:"success"})
+      if (productstock) {
+        soc.io.emit("updateStock", [{
+          category_id,
+          item_id,
+          productstock: Number(productstock) + db_stock,
+        }]);
+      }
+      return res.json({ message: "success" });
     } else {
-      return res.json({message:"failed",error:"Invalid data"})
+      return res.json({ message: "failed", error: "Invalid data" });
     }
   } catch (err) {
-    res.json({message:"failed",error:err.message})
+    res.json({ message: "failed", error: err.message });
     console.log(err);
   }
 });
 
-
 router.patch("/category_update", AdminverifyMiddleware, async (req, res) => {
-  console.log("---------     Updating Category     ---------")
+  console.log("---------     Updating Category     ---------");
   const { _id, category } = req.body;
   if (!_id || !category) {
-    return res.json({message:"failed",error:"insufficient data"})
+    return res.json({ message: "failed", error: "insufficient data" });
   }
   try {
-    const result = await categoryModel.updateOne({ _id }, { category })
+    const result = await categoryModel.updateOne({ _id }, { category });
     if (result.acknowledged) {
-      return res.json({message:"success"})
+      return res.json({ message: "success" });
     } else {
-      return res.json({message:"failed",error:"Update Failed"})
+      return res.json({ message: "failed", error: "Update Failed" });
     }
   } catch (err) {
-    res.json({message:"failed",error:err.message})
+    res.json({ message: "failed", error: err.message });
   }
-})
-
+});
 
 //!  user routes
-
 
 router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   console.log(
@@ -301,7 +320,6 @@ router.get("/user/get_categories", UserverifyMiddleware, async (req, res) => {
   const category = await categoryModel.find({}, "category categoryImage");
   res.status(200).json(category);
 });
-
 
 router.get(
   "/user/get_categories_details/:category",

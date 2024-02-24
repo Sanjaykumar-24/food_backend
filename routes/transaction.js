@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
+
 const {
   AdminverifyMiddleware,
   UserverifyMiddleware,
@@ -29,10 +30,11 @@ router.post("/recharge", AdminverifyMiddleware, async (req, res) => {
     const details = {
       admin: admin.email,
       rollno: rollno,
-      amount: rechargeamount
+      amount: rechargeamount,
+      date:new Date()
     };
     console.log(details);
-    const updatedTransaction = await transactionModel.findOne({});
+    const updatedTransaction = await transactionModel.findOne();
     console.log(updatedTransaction);
     if (!updatedTransaction) {
       await transactionModel.create(details);

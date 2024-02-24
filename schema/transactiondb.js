@@ -15,8 +15,7 @@ const transactionItemSchema = new mongoose.Schema({
     },
     date: {
         type: Date,
-        default:date()
-    },
+    }
 
 });
 const transactionSchema = new mongoose.Schema({

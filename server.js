@@ -14,7 +14,8 @@ const itemOrder = require("./routes/orderItems");
 const reportRoute = require("./routes/report");
 const printRoute = require("./routes/printOrders");
 const RfidactivateRoute = require("./routes/userActivation");
-const {socketVerifyMiddleware} = require('./routes/verifyMiddleware')
+const { socketVerifyMiddleware } = require("./routes/verifyMiddleware");
+const { instrument } = require("@socket.io/admin-ui");
 require("dotenv").config();
 const port = process.env.PORT || 2001;
 const app = express();
@@ -24,6 +25,7 @@ app.use(cors({ origin: "*" }));
 app.use(fileUpload());
 app.use(bodyParser.json());
 const { Server } = require("socket.io");
+const { iosetup } = require("./transporter/socketTransport.js");
 
 /*database connection here*/
 
@@ -38,9 +40,8 @@ mongoose
   })
   .catch((err) => {
     console.error("Database connection error 😔😔☹", err);
-  })
+  });
 
-        
 /*router junction*/
 
 app.use("/user", userRouter);
@@ -53,29 +54,33 @@ app.use("/report", reportRoute);
 app.use("/print", printRoute);
 app.use("/rfid", RfidactivateRoute);
 
-const server = app.listen(port,()=>{
-  console.log(`port http://localhost:${port} is running `);
+app.post('/temp',(req,res)=>{
+  res.send("hello woeld")
 })
-
-const io = new Server(server, {
-  cors: {
-    origin: "*"
-  }
+const server = app.listen(port, () => {
+  console.log(`port http://localhost:${port} is running `);
 });
 
-io.on("connection", (socket) => {
-        console.log("SOCKET------------ connected");
-      
-        console.log(socket.id);
-        
-        socket.on("disconnect", () => {
-          console.log(socket.id);
-        })
-      })
 
+// const io = new Server(server, {
+//   cors: {
+//     origin: "*",
+//   },
+// });
+// iosetup(io);
+// io.use(socketVerifyMiddleware);
 
 // instrument(io, {
 //   auth: false,
 //   mode: "development",
 // });
 
+// io.on("connection", (socket) => {
+//   console.log("SOCKET------------ connected");
+
+//   console.log(socket.id);
+
+//   socket.on("disconnect", () => {
+//     console.log("User disconnected ", socket.id);
+//   });
+// });
