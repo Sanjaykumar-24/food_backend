@@ -353,7 +353,7 @@ router.post("/login", async (req, res) => {
     const user = await userModel.findOne({ email });
     console.log(user);
     if (!user) {
-      return res.josn({ message:"Failed",error:"user not found" });
+      return res.json({ message:"Failed",error:"user not found" });
     }
    
     const hashpass = user.password;
