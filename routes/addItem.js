@@ -81,7 +81,7 @@ router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
             productprice: price,
             productstock: item_stock,
             productimage:
-              "https://foodimagesece.s3.eu-north-1.amazonaws.com/" + s3Key,
+              "https://foodhub555.s3.ap-south-1.amazonaws.com/" + s3Key,
             date: new Date(date()),
           },
         },
@@ -127,7 +127,7 @@ router.post("/add_category", AdminverifyMiddleware, async (req, res) => {
       const categoryData = {
         category: category,
         categoryImage:
-          "https://foodimagesece.s3.eu-north-1.amazonaws.com/" + s3Key,
+          "https://foodhub555.s3.ap-south-1.amazonaws.com/" + s3Key,
         date: new Date(date()),
       };
       const addcat = await categoryModel.create(categoryData);
