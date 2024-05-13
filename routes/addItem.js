@@ -19,7 +19,7 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
-const bucketname = "foodimagesece";
+const bucketname = "foodhub555";
 
 //! POST method to add an item in the specified category with (image,category,item name,price,category_id,item Stock)
 router.post("/add_item", AdminverifyMiddleware, async (req, res) => {
